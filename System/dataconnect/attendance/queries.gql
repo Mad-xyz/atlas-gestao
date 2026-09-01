@@ -1,0 +1,57 @@
+# Operations for Attendance Alerts
+
+# Get the latest attendance for a student
+query GetLatestAttendance($studentId: String!) 
+  @auth(expr: "auth != null && (auth.token.role == 'admin' || auth.token.role == 'gestor')") {
+  eventParticipants(
+    where: { studentId: { eq: $studentId } }
+    orderBy: [{ registeredAt: DESC }]
+    limit: 1
+  ) {
+    registeredAt
+  }
+}
+
+# Get attendance count for a student in a specific date range (monthly)
+query GetAttendanceCountInRange($studentId: String!, $startDate: Timestamp!) 
+  @auth(expr: "auth != null && (auth.token.role == 'admin' || auth.token.role == 'gestor')") {
+  eventParticipants(
+    where: {
+      studentId: { eq: $studentId }
+      registeredAt: { ge: $startDate }
+    }
+  ) {
+    registeredAt
+  }
+}
+
+# Dashboard Statistics query - PROTECTED (Admin/Gestor only)
+query getDashboardStats($todayStart: Timestamp!, $fourteenDaysAgo: Timestamp!) 
+  @auth(expr: "auth != null && (auth.token.role == 'admin' || auth.token.role == 'gestor')") {
+  todayPresences: eventParticipants(where: { registeredAt: { ge: $todayStart } }) {
+    studentId
+    registeredAt
+  }
+  # we fetch the last 30 days to check both the >14 days (Amarelo) and >30 days (Vermelho) via JS logic
+  recentPresences: eventParticipants(where: { registeredAt: { ge: $fourteenDaysAgo } }) {
+    studentId
+    registeredAt
+  }
+}
+
+query getStudentAttendanceStats($studentId: String!, $startOfMonth: Timestamp!) 
+  @auth(expr: "auth != null && (auth.token.role == 'admin' || auth.token.role == 'gestor')") {
+  eventParticipants(
+    where: { studentId: { eq: $studentId }, registeredAt: { ge: $startOfMonth } }
+    orderBy: [{ registeredAt: DESC }]
+  ) {
+    registeredAt
+  }
+}
+
+query getWeeklyFrequency($thirtyDaysAgo: Timestamp!) 
+  @auth(expr: "auth != null && (auth.token.role == 'admin' || auth.token.role == 'gestor')") {
+  eventParticipants(where: { registeredAt: { ge: $thirtyDaysAgo } }) {
+    registeredAt
+  }
+}

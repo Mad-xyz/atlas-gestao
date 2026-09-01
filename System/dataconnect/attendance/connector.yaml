@@ -1,0 +1,5 @@
+connectorId: "attendance"
+generate:
+  javascriptSdk:
+    outputDir: "../../src/dataconnect-generated"
+    package: "@dataconnect/generated"

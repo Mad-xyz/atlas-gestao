@@ -1,0 +1,231 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Funções Auxiliares de Autenticação e Multi-Tenant ─────────────────────
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // Retorna se o usuário é membro da organização especificada
+    function ehMembroDaOrganizacao(orgId) {
+      return isAuth() && (
+        exists(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid)) ||
+        exists(/databases/$(database)/documents/memberships/$(request.auth.uid + '_' + orgId))
+      );
+    }
+
+    // Retorna a role do membro dentro da organização
+    function obterRoleMembro(orgId) {
+      return get(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid)).data.role;
+    }
+
+    function possuiRole(orgId, papel) {
+      return ehMembroDaOrganizacao(orgId) && obterRoleMembro(orgId) == papel;
+    }
+
+    function ehStaffDaOrganizacao(orgId) {
+      return isAuth() && (
+        isAdmin() ||
+        possuiRole(orgId, 'owner') ||
+        possuiRole(orgId, 'admin') ||
+        possuiRole(orgId, 'gestor') ||
+        possuiRole(orgId, 'professor')
+      );
+    }
+
+    function isAdmin() {
+      let email = request.auth.token.email.lower();
+      return isAuth() && (
+        email == 'pmadsonm@gmail.com' || 
+        email == 'pmadsonm_gmail_com@rstopteam.internal' ||
+        request.auth.token.admin == true ||
+        (exists(/databases/$(database)/documents/usuarios/$(email)) && (
+          get(/databases/$(database)/documents/usuarios/$(email)).data.get('permissões', {}).get('all', false) == true ||
+          get(/databases/$(database)/documents/usuarios/$(email)).data.get('permissions', {}).get('all', false) == true ||
+          get(/databases/$(database)/documents/usuarios/$(email)).data.get('papeis', {}).get('admin', false) == true ||
+          get(/databases/$(database)/documents/usuarios/$(email)).data.get('roles', {}).get('admin', false) == true ||
+          get(/databases/$(database)/documents/usuarios/$(email)).data.get('role', '') == 'admin'
+        ))
+      );
+    }
+
+    function isStaff() {
+      let email = request.auth.token.email.lower();
+      return isAuth() && (
+        isAdmin() ||
+        request.auth.token.gestor == true ||
+        request.auth.token.professor == true ||
+        (exists(/databases/$(database)/documents/usuarios/$(email)) && (
+          get(/databases/$(database)/documents/usuarios/$(email)).data.get('permissões', {}).get('all', false) == true ||
+          get(/databases/$(database)/documents/usuarios/$(email)).data.get('permissions', {}).get('all', false) == true ||
+          get(/databases/$(database)/documents/usuarios/$(email)).data.get('papeis', {}).get('gestor', false) == true ||
+          get(/databases/$(database)/documents/usuarios/$(email)).data.get('papeis', {}).get('professor', false) == true ||
+          get(/databases/$(database)/documents/usuarios/$(email)).data.get('role', '') in ['gestor', 'professor']
+        ))
+      );
+    }
+
+    // ── Coleções Globais e Memberships Multi-Tenant ───────────────────────────
+    match /organizations/{orgId} {
+      allow read: if isAuth();
+      allow create: if isAuth();
+      allow update, delete: if isAuth() && (isAdmin() || possuiRole(orgId, 'owner'));
+
+      // Subcoleção de membros da organização
+      match /members/{memberId} {
+        allow read: if isAuth();
+        // Além de admin/owner, permite que o fundador (dono da academia) registre
+        // o próprio membro numa academia recém-criada por ele.
+        allow write: if isAuth() && (
+          isAdmin() || possuiRole(orgId, 'owner') || possuiRole(orgId, 'admin') ||
+          (request.auth.uid == memberId && request.resource.data.role == 'owner'
+            && get(/databases/$(database)/documents/organizations/$(orgId)).data.get('ownerUid', '') == request.auth.uid)
+        );
+      }
+
+      // Subcoleções Tenant-Scoped
+      match /students/{id} {
+        allow read, write: if ehStaffDaOrganizacao(orgId) || isStaff();
+      }
+
+      match /modalities/{id} {
+        allow read: if isAuth();
+        allow write: if ehStaffDaOrganizacao(orgId) || isStaff();
+
+        match /turmas/{tId} {
+          allow read: if isAuth();
+          allow write: if ehStaffDaOrganizacao(orgId) || isStaff();
+        }
+      }
+
+      match /sessions/{id} {
+        allow read: if isAuth();
+        allow write: if ehStaffDaOrganizacao(orgId) || isStaff();
+
+        match /presencas/{pId} {
+          allow read, write: if isAuth();
+        }
+      }
+
+      match /events/{id} {
+        allow read: if isAuth();
+        allow write: if ehStaffDaOrganizacao(orgId) || isStaff();
+      }
+
+      match /charges/{id} {
+        allow read: if ehStaffDaOrganizacao(orgId) || isStaff() || (isAuth() && resource.data.studentId == request.auth.uid);
+        allow write: if ehStaffDaOrganizacao(orgId) || isStaff();
+      }
+
+      match /expenses/{id} {
+        allow read, write: if ehStaffDaOrganizacao(orgId) || isStaff();
+      }
+
+      match /contracts/{id} {
+        allow read: if ehStaffDaOrganizacao(orgId) || isStaff() || (isAuth() && resource.data.studentId == request.auth.uid);
+        allow write: if ehStaffDaOrganizacao(orgId) || isStaff();
+      }
+    }
+
+    match /memberships/{membershipId} {
+      allow read: if isAuth();
+      allow write: if isAuth();
+    }
+
+    // ── Coleção de Usuários Globais ───────────────────────────────────────────
+    match /usuarios/{userId} {
+      allow create: if isAuth() && (request.auth.token.email.lower() == userId.lower() || isStaff());
+      allow get: if true;
+      allow list: if isAuth() || request.query.limit <= 1;
+
+      match /privacy/secrets {
+        allow read: if isAuth() && (isStaff() || request.auth.token.email.lower() == userId.lower());
+        allow write: if isAuth() && isStaff();
+      }
+
+      match /privado/segredos {
+        allow read: if isAuth() && (isStaff() || request.auth.token.email.lower() == userId.lower());
+        // Validação no servidor: o PIN (e o adminPin) devem ter exatamente 6 dígitos
+        // numéricos. Qualquer letra, caractere ou formato diferente é rejeitado.
+        // Permite que o próprio proprietário (mesmo e-mail do Auth) escreva o SEU segredo,
+        // inclusive no cadastro inicial (antes de virar staff). Usamos .get() para
+        // não falhar quando o campo ainda não existe.
+        allow write: if isAuth()
+          && (isStaff() || request.auth.token.email.lower() == userId.lower())
+          && request.resource.data.get('pin', '') is string
+          && request.resource.data.get('pin', '').matches('[0-9]{6}')
+          && (request.resource.data.get('adminPin', null) == null
+              || (request.resource.data.get('adminPin', '') is string
+                  && request.resource.data.get('adminPin', '').matches('[0-9]{6}')));
+      }
+
+      match /anotacoes/{id} { allow read, write: if isStaff(); }
+      match /graduacoes/{id} { allow read: if isAuth(); allow write: if isStaff(); }
+      match /visitantes/{id} { allow read, write: if isStaff(); }
+
+      allow update: if isAuth() && (isStaff() || request.auth.token.email.lower() == userId.lower());
+      allow delete: if isAdmin();
+    }
+
+    // ── Suporte para Collection Group ─────────────────────────────────────────
+    match /{path=**}/turmas/{tId} {
+      allow read: if isAuth();
+    }
+    match /{path=**}/visualizacoes/{vId} {
+      allow read, write: if isAuth();
+    }
+    match /{path=**}/presencas/{pId} {
+      allow read: if isAuth();
+    }
+
+    // ── Regras do Legado Monotenant (Manutenção da Compatibilidade) ───────────
+    match /modalidades/{id} {
+      allow read: if isAuth(); 
+      allow write: if isStaff(); 
+      match /turmas/{tId} { allow read: if isAuth(); allow write: if isStaff(); }
+    }
+
+    match /chamadas/{id} {
+      allow read: if isAuth();
+      allow write: if isStaff(); 
+      match /presencas/{pId} { allow read, write: if isAuth(); }
+    }
+    match /presencas_log/{id} { allow read, write: if isAuth(); }
+
+    match /faturamento/{id} { 
+      allow read: if isStaff() || (isAuth() && (resource.data.studentId == request.auth.uid || resource.data.studentId == request.auth.token.email.lower()));
+      allow write: if isStaff(); 
+    }
+
+    match /despesas/{id} { 
+      allow read, write: if isStaff(); 
+    }
+
+    match /contratos/{id} { 
+      allow read: if isStaff() || (isAuth() && (resource.data.studentId == request.auth.uid || resource.data.studentId == request.auth.token.email.lower()));
+      allow write: if isStaff(); 
+    }
+    match /planos/{id} { allow read, write: if isStaff(); }
+
+    match /eventos/{id} {
+      allow read: if isAuth();
+      allow write: if isStaff();
+      allow update: if isAuth() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views']);
+    }
+
+    match /visitantes/{id} {
+      allow read: if isStaff();
+      allow write: if (isStaff() || request.auth == null);
+      match /visitantes/{subId} { allow read, write: if isStaff(); }
+    }
+
+    match /cofre_pins/{id} { allow read, write: if isStaff(); }
+    match /configuracoes_jornada/{id} { allow read, write: if isStaff(); }
+    match /logs_sistema/{id} { allow read: if isStaff(); allow write: if isAuth(); }
+
+    match /users/{id} { allow read, write: if isStaff(); }
+    match /alunos/{id} { allow read, write: if isStaff(); }
+    match /students/{id} { allow read, write: if isStaff(); }
+  }
+}

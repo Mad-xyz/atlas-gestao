@@ -1,0 +1,51 @@
+{
+  "name": "atlas-multi-tenant",
+  "private": true,
+  "version": "26.0.0",  
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.4.0",
+    "@capacitor/local-notifications": "^8.2.0",
+    "@capacitor/push-notifications": "^8.1.1",
+    "@tailwindcss/vite": "^4.2.2",
+    "dompurify": "^3.4.12",
+    "firebase": "^12.11.0",
+    "framer-motion": "^12.38.0",
+    "html2pdf.js": "^0.14.0",
+    "lucide-react": "^1.0.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-hot-toast": "^2.6.0",
+    "react-is": "^19.2.5",
+    "react-router-dom": "^7.13.2",
+    "recharts": "^3.8.1",
+    "tailwindcss": "^4.2.2"
+  },
+  "devDependencies": {
+    "@bubblewrap/cli": "^1.24.1",
+    "@bubblewrap/core": "^1.24.1",
+    "@capacitor/android": "^8.4.0",
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.4.0",
+    "@eslint/js": "^9.39.4",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "firebase-admin": "^14.2.0",
+    "firebase-tools": "^15.16.0",
+    "globals": "^17.4.0",
+    "sharp": "^0.35.1",
+    "terser": "^5.48.0",
+    "vite": "^8.0.1",
+    "vite-plugin-pwa": "^1.2.0"
+  }
+}

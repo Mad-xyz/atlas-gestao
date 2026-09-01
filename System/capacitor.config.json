@@ -1,0 +1,15 @@
+{
+  "appId": "com.rstopteam.app",
+  "appName": "RS Top Team",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "backgroundColor": "#000000"
+    }
+  }
+}

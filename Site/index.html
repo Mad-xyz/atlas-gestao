@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Atralas - Sistema de Gestão para Academia de Luta e Artes Marciais</title>
+  <meta name="description" content="Gerencie alunos, turmas, mensalidades e check-ins com o Atralas, o sistema de gestão para academias de artes marciais com app personalizado e gamificação." />
+  <link rel="icon" type="image/png" href="img/favicon.png" />
+  <link rel="apple-touch-icon" href="img/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="preload" href="css/styles.css" as="style" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="scrollProgress" aria-hidden="true"></div>
+  <header class="header" id="topo">
+    <nav class="nav container">
+      <a href="#topo" class="brand" aria-label="Atralas">
+        <img src="img/Atlas os.webp" alt="Atlas Logo" class="brand-logo" width="36" height="36" loading="eager" fetchpriority="high" decoding="sync" />
+        <span class="brand-name">atralas</span>
+      </a>
+      <button class="nav-toggle" id="navToggle" aria-label="Abrir menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#funcionalidades">Recursos</a></li>
+        <li><a href="#planos">Planos</a></li>
+        <li><a href="#demonstracao">Demonstração</a></li>
+        <li><a href="#faq">FAQ</a></li>
+      </ul>
+      <div class="nav-actions">
+        <a href="#login" class="btn btn-ghost">Acessar</a>
+        <a href="#cadastro" class="btn btn-primary">Começar</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-bg" aria-hidden="true"></div>
+      <div class="container hero-inner">
+        <div class="hero-content">
+          <p class="hero-tags hero-in">Jiu-Jitsu <span>·</span> Muay Thai <span>·</span> Boxe <span>·</span> MMA</p>
+          <h1 class="hero-in hero-in-d1">Sua academia no ritmo do <span class="hl">próximo treino.</span></h1>
+          <p class="hero-sub hero-in hero-in-d2">
+            Atralas conecta alunos, equipe, pagamentos e frequência em uma operação que acompanha a intensidade da sua academia sem perder o controle.
+          </p>
+          <ul class="hero-list hero-in hero-in-d2">
+            <li>Gestão de alunos</li>
+            <li>Gamificação</li>
+            <li>Cobranças automatizadas</li>
+            <li>App para alunos</li>
+          </ul>
+          <div class="hero-actions hero-in hero-in-d2">
+            <a href="#cadastro" class="btn btn-primary">Começar agora</a>
+            <a href="#demonstracao" class="btn btn-outline">Ver demonstração</a>
+          </div>
+          <p class="hero-scroll hero-in hero-in-d3">Role para explorar</p>
+        </div>
+        <div class="hero-visual hero-in" aria-hidden="true">
+          <div class="phone-card">
+            <span class="phone-tape" aria-hidden="true"></span>
+            <div class="phone-screen">
+              <div class="app-header">
+                <span class="app-dot"></span>
+                <strong>Atralas</strong>
+              </div>
+              <div class="app-card app-card-train">
+                <span class="app-label">Próximo treino</span>
+                <span class="app-value">Jiu-Jitsu · 18:30</span>
+              </div>
+              <div class="app-row">
+              <div class="app-mini">Ranking<br /><b>#3</b></div>
+              <div class="app-mini">Sequência<br /><b data-count="12">12</b></div>
+              <div class="app-mini">XP<br /><b data-count="4560">4.560</b></div>
+              </div>
+              <div class="app-card app-card-progress">
+                <span class="app-label">Faixa azul</span>
+                <div class="progress"><span style="width:64%"></span></div>
+                <span class="app-label app-sub">4 de 4 graus · falta pouco</span>
+              </div>
+            </div>
+          </div>
+          <div class="float-card float-card-checkin">
+            <strong>Check-in</strong>
+            <span>Marina C. · 18:30</span>
+            <b>Presente</b>
+          </div>
+          <div class="float-card-alt float-card-pay">
+            <strong>Pix recebido</strong>
+            <span>R$ 199,00 · Mensalidade</span>
+            <b>Confirmado</b>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="marquee-band" aria-hidden="true">
+      <div class="marquee-inner">
+        <div class="marquee-group">
+          <span>Jiu-Jitsu</span><span>Muay Thai</span><span>Boxe</span><span>MMA</span><span>Judô</span><span>Karatê</span><span>Sanda</span><span>Luta Livre</span>
+        </div>
+        <div class="marquee-group">
+          <span>Jiu-Jitsu</span><span>Muay Thai</span><span>Boxe</span><span>MMA</span><span>Judô</span><span>Karatê</span><span>Sanda</span><span>Luta Livre</span>
+        </div>
+      </div>
+    </div>
+
+    <section class="section feature-identity">
+      <div class="container two-col">
+        <div class="feature-identity-cards reveal-late" aria-hidden="true">
+          <div class="app-brand-sample">
+            <span class="sample-logo">A</span>
+            <span class="sample-name">Atralas Fight Team</span>
+          </div>
+          <div class="app-brand-sample alt">
+            <span class="sample-logo red">A</span>
+            <span class="sample-name">Atralas Academy</span>
+          </div>
+          <p class="sample-caption">Logo · Nome — Ícone · Cores</p>
+          <div class="sample-chip">Sua marca</div>
+        </div>
+        <div class="feature-identity-text reveal">
+          <p class="eyebrow">Sua marca no app</p>
+          <h2>O aluno baixa o app da sua academia.</h2>
+          <p>
+            O Atralas cuida da tecnologia. Seus alunos veem o nome, as cores e a identidade da academia desde a abertura do aplicativo até o acompanhamento dos treinos.
+          </p>
+          <ul class="check-list">
+            <li>Sua identidade em cada detalhe</li>
+            <li>Sua marca na tela do aluno</li>
+            <li>Canal direto com alunos</li>
+            <li>Acesso organizado e seguro</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="funcionalidades">
+      <div class="container">
+        <header class="section-head reveal">
+          <p class="eyebrow"><span>01</span>Gestão no dia a dia</p>
+          <h2>Tudo acontecendo em um só lugar.</h2>
+          <p>Da chegada do aluno ao acompanhamento da academia, tenha as principais informações sempre à mão.</p>
+        </header>
+        <div class="feature-grid">
+          <article class="feature-card reveal">
+            <div class="feature-card-screen">
+              <div class="table-card">
+                <div class="table-row head"><span>Aluno</span><span>Turma</span><span>Status</span></div>
+                <div class="table-row"><span class="avatar">MC</span><span>Marina C.</span><span class="badge ok">Ativo</span></div>
+                <div class="table-row"><span class="avatar">RS</span><span>Rafael S.</span><span class="badge ok">Ativo</span></div>
+                <div class="table-row"><span class="avatar">BL</span><span>Bruno L.</span><span class="badge warn">Pend.</span></div>
+              </div>
+            </div>
+            <div class="feature-card-label">
+              <p>Alunos</p>
+              <span>Toda a jornada do aluno</span>
+            </div>
+          </article>
+          <article class="feature-card reveal">
+            <div class="feature-card-screen">
+              <div class="stats-grid">
+                <div class="stat-card"><span>MRR atual</span><b data-count="13396" data-prefix="R$ ">R$ 13.396</b><em data-count="68" data-suffix=" assinaturas">68 assinaturas</em></div>
+                <div class="stat-card highlight"><span>Saldo projetado</span><b data-count="7986" data-prefix="R$ ">R$ 7.986</b><em>Jul/26</em></div>
+                <div class="stat-card"><span>Previsto a pagar</span><b data-count="6840" data-prefix="R$ ">R$ 6.840</b><em>Jul/26</em></div>
+                <div class="stat-card"><span>Mensalidades</span><b data-count="1728" data-prefix="R$ ">R$ 1.728</b><em>Recebidas</em></div>
+              </div>
+            </div>
+            <div class="feature-card-label">
+              <p>Financeiro</p>
+              <span>Mensalidades sem dor de cabeça</span>
+            </div>
+          </article>
+          <article class="feature-card reveal">
+            <div class="feature-card-screen">
+              <div class="schedule-card">
+                <div class="schedule-item"><span>18:30</span><b>Jiu-Jitsu</b><em>Prof. André</em></div>
+                <div class="schedule-item"><span>19:30</span><b>Muay Thai</b><em>Prof. Leo</em></div>
+                <div class="schedule-item"><span>20:30</span><b>Boxe</b><em>Prof. Carla</em></div>
+              </div>
+            </div>
+            <div class="feature-card-label">
+              <p>Agenda</p>
+              <span>Presença e operação no tatame</span>
+            </div>
+          </article>
+          <article class="feature-card reveal">
+            <div class="feature-card-screen">
+              <div class="belt-list">
+                <div class="belt-row"><span class="belt white"></span><span>Branca</span><em>4 graus</em></div>
+                <div class="belt-row"><span class="belt blue"></span><span>Azul</span><em>4 graus</em></div>
+                <div class="belt-row"><span class="belt purple"></span><span>Roxa</span><em>4 graus</em></div>
+                <div class="belt-row"><span class="belt black"></span><span>Preta</span><em>6 graus</em></div>
+              </div>
+            </div>
+            <div class="feature-card-label">
+              <p>Graduações</p>
+              <span>Saiba quem está pronto para graduar</span>
+            </div>
+          </article>
+          <article class="feature-card reveal">
+            <div class="feature-card-screen">
+              <div class="rank-card">
+                <div class="rank-item gold"><span>M</span><b>Marina C.</b><em>4.820 XP</em></div>
+                <div class="rank-item silver"><span>R</span><b>Rafael S.</b><em>4.560 XP</em></div>
+                <div class="rank-item bronze"><span>B</span><b>Bruno L.</b><em>4.210 XP</em></div>
+              </div>
+            </div>
+            <div class="feature-card-label">
+              <p>Engajamento</p>
+              <span>Alunos engajados em cada treino</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-dark" id="gamificacao">
+      <div class="container">
+        <header class="section-head reveal">
+          <p class="eyebrow"><span>02</span>Engajamento</p>
+          <h2>Faça o aluno querer voltar para o próximo treino.</h2>
+          <p>Pontos, rankings, sequências e conquistas transformam cada treino em progresso. O aluno acompanha sua evolução, busca novos objetivos e se mantém mais engajado com a academia.</p>
+        </header>
+        <div class="gamification">
+          <div class="gamification-rank reveal">
+            <div class="gamification-podium">
+              <div class="podium-item second"><span class="podium-medal">R</span><b>Rafael S.</b><em>4.560 XP</em></div>
+              <div class="podium-item first"><span class="podium-medal">M</span><b>Marina C.</b><em>4.820 XP</em></div>
+              <div class="podium-item third"><span class="podium-medal">B</span><b>Bruno L.</b><em>4.210 XP</em></div>
+            </div>
+          </div>
+          <div class="gamification-badges reveal-late">
+            <p class="badges-title">Conquistas</p>
+            <div class="badge-grid">
+              <div class="badge-card normal">Primeiro treino<em>Normal</em></div>
+              <div class="badge-card normal">5 treinos<em>Normal</em></div>
+              <div class="badge-card normal">Jiu-Jitsu<em>Normal</em></div>
+              <div class="badge-card rare">Sem descanso<em>Rara</em></div>
+              <div class="badge-card rare">10 treinos<em>Rara</em></div>
+              <div class="badge-card epic">Mestre da teoria<em>Épica</em></div>
+              <div class="badge-card legendary">250 treinos<em>Lendária</em></div>
+              <div class="badge-card epic">100 treinos<em>Épica</em></div>
+            </div>
+            <div class="badge-legend"><span class="lg normal">Normal</span><span class="lg rare">Rara</span><span class="lg epic">Épica</span><span class="lg legendary">Lendária</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="retencao">
+      <div class="container two-col">
+        <div class="retention-visual reveal-late" aria-hidden="true">
+          <div class="retention-card">
+            <p class="retention-title">Radar de retenção</p>
+            <span class="retention-badge">5 alunos precisam de atenção</span>
+            <div class="retention-row">
+              <span class="avatar">MT</span>
+              <div><b>Marcos T.</b><em>12 dias sem treinar</em></div>
+              <button class="btn btn-small">Contato</button>
+            </div>
+            <div class="retention-row">
+              <span class="avatar">FA</span>
+              <div><b>Fernanda A.</b><em>Frequência caiu 60% neste mês</em></div>
+              <button class="btn btn-small">Contato</button>
+            </div>
+            <div class="retention-row">
+              <span class="avatar">JP</span>
+              <div><b>João P.</b><em>Mensalidade atrasada · 8 dias</em></div>
+              <button class="btn btn-small">Contato</button>
+            </div>
+            <div class="retention-positive"><strong>Rafael M. voltou a treinar</strong><span>Recuperado após alerta · 3 treinos na semana</span></div>
+          </div>
+        </div>
+        <div class="reveal">
+          <p class="eyebrow">Retenção inteligente</p>
+          <h2>Veja quem está deixando de treinar antes do cancelamento.</h2>
+          <p>
+            Quedas de frequência, treinos interrompidos e mensalidades pendentes aparecem na mesma tela. Sua equipe sabe quem precisa de contato e por quê.
+          </p>
+          <ul class="check-list">
+            <li>Identifique alunos que estão se afastando</li>
+            <li>Encontre mensalidades que precisam de cobrança</li>
+            <li>Acompanhe frequência e evolução na mesma ficha</li>
+          </ul>
+          <a href="#cadastro" class="btn btn-primary">Cadastrar minha academia</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-dark" id="graduacoes-modalidades">
+      <div class="container">
+        <header class="section-head reveal">
+          <p class="eyebrow"><span>03</span>Graduações</p>
+          <h2>Graduações configuradas para cada modalidade.</h2>
+          <p>Configure faixas, graus, níveis e critérios para cada modalidade. A equipe acompanha treinos, avaliações e tempo em cada etapa, enquanto as promoções ficam registradas no histórico do aluno.</p>
+        </header>
+        <div class="modality-tabs reveal" role="tablist">
+          <button class="modality active" data-modality="jiu-jitsu">Jiu-Jitsu</button>
+          <button class="modality" data-modality="muay-thai">Muay Thai</button>
+          <button class="modality" data-modality="sanda">Sanda</button>
+          <button class="modality" data-modality="boxe">Boxe</button>
+          <button class="modality" data-modality="mma">MMA</button>
+          <button class="modality" data-modality="judo">Judô</button>
+          <button class="modality" data-modality="karate">Karatê</button>
+        </div>
+        <div class="modality-panels reveal-late">
+          <div class="modality-panel active" data-modality-panel="jiu-jitsu">
+            <div class="belt-line"><span class="belt white"></span><span>Faixa Branca</span><em>4 graus</em></div>
+            <div class="belt-line"><span class="belt blue"></span><span>Faixa Azul</span><em>4 graus</em></div>
+            <div class="belt-line"><span class="belt purple"></span><span>Faixa Roxa</span><em>4 graus</em></div>
+            <div class="belt-line"><span class="belt brown"></span><span>Faixa Marrom</span><em>4 graus</em></div>
+            <div class="belt-line"><span class="belt black"></span><span>Faixa Preta</span><em>6 graus</em></div>
+          </div>
+          <div class="modality-panel" data-modality-panel="muay-thai">
+            <div class="belt-line"><span class="belt white"></span><span>Branco</span><em>Grau 1</em></div>
+            <div class="belt-line"><span class="belt red"></span><span>Vermelho</span><em>Grau 3</em></div>
+            <div class="belt-line"><span class="belt redblue"></span><span>Vermelho e Azul</span><em>Grau 4</em></div>
+            <div class="belt-line"><span class="belt lightblue"></span><span>Azul Claro</span><em>Grau 5</em></div>
+            <div class="belt-line"><span class="belt darkblue"></span><span>Azul Escuro</span><em>Grau 7</em></div>
+            <div class="belt-line"><span class="belt blackred"></span><span>Preto e Vermelho</span><em>Grau 11</em></div>
+          </div>
+          <div class="modality-panel" data-modality-panel="sanda">
+            <div class="belt-line"><span class="belt black"></span><span>1º Nível · Preto</span><em>Iniciante</em></div>
+            <div class="belt-line"><span class="belt red"></span><span>2º Nível · Vermelho</span><em>Básico</em></div>
+            <div class="belt-line"><span class="belt orange"></span><span>4º Nível · Preto com borda laranja</span><em>Intermediário</em></div>
+            <div class="belt-line"><span class="belt orange"></span><span>6º Nível · Laranja</span><em>Avançado</em></div>
+            <div class="belt-line"><span class="belt white"></span><span>9º Nível · Branco</span><em>Mestre</em></div>
+          </div>
+          <div class="modality-panel" data-modality-panel="boxe">
+            <div class="belt-line"><span class="belt white"></span><span>Iniciante</span><em>Branco</em></div>
+            <div class="belt-line"><span class="belt blue"></span><span>Intermediário</span><em>Azul</em></div>
+            <div class="belt-line"><span class="belt purple"></span><span>Avançado</span><em>Roxo</em></div>
+            <div class="belt-line"><span class="belt brown"></span><span>Elite</span><em>Marrom</em></div>
+            <div class="belt-line"><span class="belt black"></span><span>Campeão</span><em>Preto</em></div>
+          </div>
+          <div class="modality-panel" data-modality-panel="mma">
+            <div class="belt-line"><span class="belt white"></span><span>Faixa Branca</span><em>Iniciante</em></div>
+            <div class="belt-line"><span class="belt blue"></span><span>Faixa Azul</span><em>Fundamentos</em></div>
+            <div class="belt-line"><span class="belt purple"></span><span>Faixa Roxa</span><em>Intermediário</em></div>
+            <div class="belt-line"><span class="belt brown"></span><span>Faixa Marrom</span><em>Avançado</em></div>
+            <div class="belt-line"><span class="belt black"></span><span>Faixa Preta</span><em>Profissional</em></div>
+          </div>
+          <div class="modality-panel" data-modality-panel="judo">
+            <div class="belt-line"><span class="belt white"></span><span>Branca</span><em>6º Kyu</em></div>
+            <div class="belt-line"><span class="belt yellow"></span><span>Amarela</span><em>5º Kyu</em></div>
+            <div class="belt-line"><span class="belt orange"></span><span>Laranja</span><em>4º Kyu</em></div>
+            <div class="belt-line"><span class="belt green"></span><span>Verde</span><em>3º Kyu</em></div>
+            <div class="belt-line"><span class="belt brown"></span><span>Marrom</span><em>2º e 1º Kyu</em></div>
+            <div class="belt-line"><span class="belt black"></span><span>Preta</span><em>1º a 5º Dan</em></div>
+          </div>
+          <div class="modality-panel" data-modality-panel="karate">
+            <div class="belt-line"><span class="belt white"></span><span>Branca</span><em>10º Kyu</em></div>
+            <div class="belt-line"><span class="belt yellow"></span><span>Amarela</span><em>8º Kyu</em></div>
+            <div class="belt-line"><span class="belt green"></span><span>Verde</span><em>6º Kyu</em></div>
+            <div class="belt-line"><span class="belt brown"></span><span>Marrom</span><em>3º Kyu</em></div>
+            <div class="belt-line"><span class="belt black"></span><span>Preta</span><em>1º a 10º Dan</em></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="planos">
+      <div class="container">
+        <header class="section-head reveal">
+          <p class="eyebrow"><span>04</span>Planos</p>
+          <h2>Um plano adequado ao tamanho da sua academia.</h2>
+          <p>Comece com os recursos de que precisa hoje e mude de plano quando o número de alunos aumentar.</p>
+          <div class="billing-toggle">
+            <span class="billing-label active" data-cycle="monthly">Mensal</span>
+            <label class="switch">
+              <input type="checkbox" id="billingSwitch" checked />
+              <span class="slider"></span>
+            </label>
+            <span class="billing-label" data-cycle="annual">Anual <em>Economize 20%</em></span>
+          </div>
+        </header>
+        <div class="plans-grid">
+          <article class="plan-card" data-monthly="199" data-annual="159">
+            <h3>Start</h3>
+            <p class="plan-sub">Até 50 alunos · para quem está começando.</p>
+            <p class="plan-price"><span class="currency">R$</span><span class="amount">199</span><span class="period">/mês</span></p>
+            <p class="plan-note">R$ 1.908,00 cobrados por ano</p>
+            <ul class="plan-features">
+              <li>Até 50 alunos</li>
+              <li>App do aluno personalizado</li>
+              <li>Gestão de alunos e turmas</li>
+              <li>Check-in por QR Code</li>
+              <li>Controle financeiro</li>
+              <li>Link de pagamento</li>
+            </ul>
+            <a href="#cadastro?plan=start" class="btn btn-outline btn-block">Escolher plano</a>
+          </article>
+          <article class="plan-card featured" data-monthly="263" data-annual="210">
+            <span class="plan-flag">Mais escolhido</span>
+            <h3>Growth</h3>
+            <p class="plan-sub">Até 75 alunos · para academias ganhando ritmo.</p>
+            <p class="plan-price"><span class="currency">R$</span><span class="amount">263</span><span class="period">/mês</span></p>
+            <p class="plan-note">R$ 2.526,00 cobrados por ano</p>
+            <ul class="plan-features">
+              <li>Até 75 alunos</li>
+              <li>Tudo do plano Start</li>
+              <li>Gamificação e ranking</li>
+              <li>Cobrança automática Pix e cartão</li>
+              <li>Régua de cobrança automática</li>
+              <li>Notificações por WhatsApp e e-mail</li>
+              <li>Emissão de NFS-e</li>
+            </ul>
+            <a href="#cadastro?plan=growth" class="btn btn-primary btn-block">Escolher plano</a>
+          </article>
+          <article class="plan-card" data-monthly="359" data-annual="287">
+            <h3>Pro</h3>
+            <p class="plan-sub">Até 120 alunos · para operações em expansão.</p>
+            <p class="plan-price"><span class="currency">R$</span><span class="amount">359</span><span class="period">/mês</span></p>
+            <p class="plan-note">R$ 3.448,00 cobrados por ano</p>
+            <ul class="plan-features">
+              <li>Até 120 alunos</li>
+              <li>Tudo do plano Growth</li>
+              <li>Cursos online dentro do app</li>
+              <li>Check-in por NFC</li>
+              <li>Franquia de vídeo ampliada</li>
+              <li>Suporte prioritário</li>
+            </ul>
+            <a href="#cadastro?plan=pro" class="btn btn-outline btn-block">Escolher plano</a>
+          </article>
+          <article class="plan-card" data-monthly="599" data-annual="479">
+            <h3>Elite</h3>
+            <p class="plan-sub">Até 250 alunos · para grandes academias.</p>
+            <p class="plan-price"><span class="currency">R$</span><span class="amount">599</span><span class="period">/mês</span></p>
+            <p class="plan-note">R$ 5.748,00 cobrados por ano</p>
+            <ul class="plan-features">
+              <li>Até 250 alunos</li>
+              <li>Tudo do plano Pro</li>
+              <li>Vídeo com franquia de 500 min</li>
+              <li>Múltiplas unidades</li>
+              <li>White Label</li>
+              <li>Suporte dedicado</li>
+            </ul>
+            <a href="#cadastro?plan=elite" class="btn btn-outline btn-block">Escolher plano</a>
+          </article>
+        </div>
+        <div class="plans-more reveal">
+          <h3>Precisa de mais?</h3>
+          <p>Para academias com mais de 250 alunos, várias unidades ou necessidades específicas.</p>
+          <ul>
+            <li>Mais de 250 alunos</li>
+            <li>Múltiplas unidades</li>
+            <li>White Label</li>
+            <li>Suporte dedicado</li>
+          </ul>
+          <a href="#contato" class="btn btn-ghost">Solicitar proposta</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-dark">
+      <div class="container">
+        <header class="section-head reveal">
+          <p class="eyebrow"><span>05</span>Começar é simples · em menos de 5 minutos</p>
+          <h2>Do primeiro contato ao primeiro treino.</h2>
+          <p>Três passos para a sua academia ganhar o próprio app.</p>
+        </header>
+        <div class="steps-grid">
+          <div class="step-card reveal">
+            <span class="step-num">01</span>
+            <h3>Fale com a gente</h3>
+            <p>Conte como a academia funciona hoje. Respondemos pelo WhatsApp.</p>
+          </div>
+          <div class="step-card reveal-late">
+            <span class="step-num">02</span>
+            <h3>Configure sua academia</h3>
+            <p>Turmas, alunos e regras entram no sistema no ritmo da operação.</p>
+          </div>
+          <div class="step-card reveal">
+            <span class="step-num">03</span>
+            <h3>Comece a gerenciar</h3>
+            <p>Check-in, mensalidades e graduações passam a viver em um só lugar.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-demo" id="demonstracao">
+      <div class="container demo-grid">
+        <div class="demo-copy reveal">
+          <p class="eyebrow"><span>06</span>Sem compromisso · Tire todas as suas dúvidas</p>
+          <h2>Agende sua demonstração</h2>
+          <p>Conte um pouco sobre sua academia. Vamos entender sua operação e mostrar como o Atralas pode ajudar no seu dia a dia.</p>
+          <p class="demo-whats">Falar com o time no WhatsApp</p>
+          <p class="demo-privacy">Seus dados serão utilizados apenas para entrarmos em contato sobre a demonstração.</p>
+        </div>
+        <form class="demo-form reveal-late" id="demoForm" novalidate>
+          <div class="form-row">
+            <label for="fNome">Seu nome</label>
+            <input type="text" id="fNome" name="nome" placeholder="Seu nome" required />
+          </div>
+          <div class="form-row">
+            <label for="fEmail">E-mail</label>
+            <input type="email" id="fEmail" name="email" placeholder="voce@email.com" required />
+          </div>
+          <div class="form-row">
+            <label for="fWhats">WhatsApp</label>
+            <div class="input-group">
+              <span class="input-prefix">+55</span>
+              <input type="tel" id="fWhats" name="whatsapp" placeholder="(11) 99999-9999" required />
+            </div>
+          </div>
+          <div class="form-row">
+            <label for="fAcademia">Nome da academia</label>
+            <input type="text" id="fAcademia" name="academia" placeholder="Nome da academia" required />
+          </div>
+          <div class="form-row">
+            <label for="fAlunos">Quantidade aproximada de alunos</label>
+            <select id="fAlunos" name="alunos">
+              <option value="">Selecione uma faixa</option>
+              <option>Até 50 alunos</option>
+              <option>51 a 75 alunos</option>
+              <option>76 a 120 alunos</option>
+              <option>121 a 250 alunos</option>
+              <option>Mais de 250 alunos</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="fSite">Site (opcional)</label>
+            <input type="url" id="fSite" name="site" placeholder="https://" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block btn-lg">Solicitar demonstração</button>
+          <p class="form-terms">Ao continuar, você concorda com os <a href="#termos">Termos de Uso</a> e confirma que leu a <a href="#privacidade">Política de Privacidade</a>.</p>
+          <p class="form-success" id="formSuccess" hidden>Recebemos sua solicitação. Nossa equipe entrará em contato em breve.</p>
+        </form>
+      </div>
+    </section>
+
+    <section class="section" id="faq">
+      <div class="container narrow">
+        <header class="section-head reveal">
+          <p class="eyebrow"><span>07</span>Suporte</p>
+          <h2>Dúvidas frequentes</h2>
+          <p>Ainda ficou com alguma dúvida? Fale com a equipe e conte como funciona a rotina da sua academia.</p>
+        </header>
+        <div class="faq-list reveal">
+          <details class="faq-item">
+            <summary>O aplicativo fica mesmo com o nome da minha academia?</summary>
+            <p>Sim. O aplicativo é personalizado com o nome, o ícone, as cores e a identidade da sua academia, criando uma experiência própria para os seus alunos.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Meus alunos pagam para usar o aplicativo?</summary>
+            <p>Não. O acesso dos alunos ao app está incluído no plano da academia, sem cobrança individual para eles.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Funciona para quais modalidades?</summary>
+            <p>Jiu-Jitsu, Muay Thai, Boxe, MMA, Judô, Karatê e outras modalidades. Turmas, graduações e regras podem ser configuradas para cada uma.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Vocês ajudam a migrar meus dados?</summary>
+            <p>Sim. Nossa equipe acompanha a importação de alunos, planos e mensalidades para a troca acontecer sem interromper a operação.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Preciso instalar algo no computador?</summary>
+            <p>Não. A gestão funciona pelo navegador e o aluno usa o aplicativo no celular. Você só precisa de conexão com a internet.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-cta" id="cadastro">
+      <div class="container cta-box reveal">
+        <h2>Sua academia já tem nome. Agora ela pode ter o próprio app.</h2>
+        <p>Organize a operação e ofereça aos alunos um aplicativo com a identidade da sua academia.</p>
+        <a href="#cadastro" class="btn btn-primary btn-lg">Criar minha academia</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer" id="login">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <a href="#topo" class="brand">
+          <img src="img/Atlas os.webp" alt="Atlas Logo" class="brand-logo" width="30" height="30" loading="lazy" />
+          <span class="brand-name">atralas</span>
+        </a>
+        <p>A plataforma completa para academias de artes marciais: gestão, financeiro, graduações e alunos engajados em um só lugar.</p>
+        <p class="footer-social">@atralas</p>
+      </div>
+      <div class="footer-col">
+        <h4>Produto</h4>
+        <ul>
+          <li><a href="#funcionalidades">Funcionalidades</a></li>
+          <li><a href="#gamificacao">Gamificação</a></li>
+          <li><a href="#planos">Planos</a></li>
+          <li><a href="#parceiros">Parceiros</a></li>
+          <li><a href="#faq">Perguntas frequentes</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Acesso</h4>
+        <ul>
+          <li><a href="#login">Entrar no painel</a></li>
+          <li><a href="#contato">Entrar em contato</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#termos">Termos de Uso</a></li>
+          <li><a href="#privacidade">Política de Privacidade</a></li>
+          <li><a href="#exclusao">Exclusão de conta</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="container footer-bottom">
+      <p>© 2026 Atralas. Todos os direitos reservados.</p>
+      <p>Feito para quem vive o tatame.</p>
+    </div>
+  </footer>
+
+  <div class="cookie-bar" id="cookieBar">
+    <p>Usamos cookies para analisar sua navegação e personalizar conteúdos e anúncios, inclusive em serviços de terceiros. Ao continuar, você autoriza o uso dessas informações.</p>
+    <button class="btn btn-primary btn-small" id="cookieOk">Continuar navegando</button>
+  </div>
+
+  <!-- Caixinha do questionário: aparece por cima do conteúdo do site -->
+  <div class="quiz-overlay" id="quizOverlay" role="dialog" aria-modal="true" aria-label="Questionário de maturidade da academia" hidden>
+    <div class="quiz-shell">
+      <header class="quiz-header">
+        <span class="quiz-brand"><span class="quiz-brand-logo" aria-hidden="true"></span>atralas</span>
+        <button class="quiz-fechar-link" id="quizFechar" aria-label="Fechar" type="button">×</button>
+      </header>
+      <div class="quiz-corpo">
+        <section class="quiz-view" id="quizView">
+          <div class="quiz-progresso">
+            <span class="quiz-contador" id="quizContador">Pergunta 1 de 12</span>
+            <div class="quiz-trilha"><span class="quiz-barra" id="quizBarra"></span></div>
+            <span class="quiz-passo" id="quizPasso">1/12</span>
+          </div>
+          <p class="quiz-categoria" id="quizCategoria"></p>
+          <h2 class="quiz-pergunta" id="quizPergunta"></h2>
+          <p class="quiz-descricao" id="quizDescricao"></p>
+          <div class="quiz-opcoes" id="quizOpcoes"></div>
+          <div class="quiz-nav">
+            <button class="btn btn-ghost" id="quizVoltar" disabled>Voltar</button>
+            <button class="btn btn-primary" id="quizProximo" disabled>Próximo</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/quiz.js" defer></script>
+  <script src="js/main.js" defer></script>
+</body>
+</html>

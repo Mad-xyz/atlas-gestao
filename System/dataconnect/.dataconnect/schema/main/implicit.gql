@@ -1,0 +1,6 @@
+extend type EventParticipant {
+  """
+  ✨ Implicit foreign key field based on `EventParticipant`.`event`. It must match the value of `Event`.`id`. See `@ref` for how to customize it.
+  """
+  eventId: UUID! @fdc_generated(from: "EventParticipant.event", purpose: IMPLICIT_REF_FIELD)
+}
