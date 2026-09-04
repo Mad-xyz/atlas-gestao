@@ -40,10 +40,13 @@
 
     /**
      * cadastrarAcademia(dados)
-     * Executa o cadastro em duas etapas seguras no lado do servidor:
-     *  1. `createUserWithEmailAndPassword` — o Firebase Auth valida e cria a conta.
-     *  2. `setDoc` no Firestore — as Firestore Security Rules validam e autorizam
-     *     cada escrita (usuário, segredos do PIN, organização e membership).
+     * Executa o cadastro em etapas seguras (modelo multi-tenant):
+     *  1. `createUserWithEmailAndPassword` — Firebase Auth cria a conta.
+     *  2. `organizations/{orgId}` — cria a academia (tenant). Regra: autenticado.
+     *  3. `organizations/{orgId}/members/{uid}` — membership de owner (bootstrap).
+     *  4. `organizations/{orgId}/usuarios/{email}` — perfil do gestor.
+     *  5. `organizations/{orgId}/usuarios/{email}/privado/segredos` — PIN seguro.
+     * Ordem obrigatória: org → member → perfil, para que as regras (staff) autorizem.
      */
     window.cadastrarAcademia = async function (dados) {
       var emailLimpo = String(dados.email || "").toLowerCase().trim();
@@ -58,55 +61,30 @@
       }
 
       // 1) Cria a conta no Firebase Auth (o servidor valida email/senha).
+      //    Idempotente: se a conta já existe (cadastro anterior incompleto), autentica
+      //    para reaproveitar o mesmo UID e continua com a criação da org/membership/perfil.
       var credencial;
       try {
         credencial = await _auth.createUserWithEmailAndPassword(emailLimpo, pin);
       } catch (e) {
-        throw marcarEtapa("AUTH (criar conta)", e);
+        if (e.code === "auth/email-already-in-use") {
+          try {
+            credencial = await _auth.signInWithEmailAndPassword(emailLimpo, pin);
+            await _auth.signOut();
+          } catch (e2) {
+            throw marcarEtapa("AUTH (email já em uso)", e2);
+          }
+        } else {
+          throw marcarEtapa("AUTH (criar conta)", e);
+        }
       }
       var uid = credencial.user.uid;
 
-      // 2) Cria o perfil público do usuário como GESTOR da academia.
-      try {
-        await _db.collection("usuarios").doc(emailLimpo).set({
-          id: emailLimpo,
-          email: emailLimpo,
-          nome: dados.nome,
-          telefone: dados.telefone,
-          ddd: dados.ddd,
-          telefone_limpo: dados.telefone_limpo,
-          telefone_completo: dados.telefone_completo,
-          papeis: { gestor: true },
-          status: "Ativo",
-          criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-          atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-          permissoes: {
-            viewFinance: true,
-            manageFinance: true,
-            manageUsers: true,
-            manageClasses: true,
-            manageEvents: true
-          }
-        });
-      } catch (e) {
-        throw marcarEtapa("FIRESTORE (salvar usuário)", e);
-      }
-
-      // 3) Guarda o PIN na subcoleção segura (privado/segredos).
-      try {
-        await _db.collection("usuarios").doc(emailLimpo).collection("privado").doc("segredos").set({
-          pin: pin,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-      } catch (e) {
-        throw marcarEtapa("FIRESTORE (salvar PIN)", e);
-      }
-
-      // 4) Cria a academia (organização) no multi-tenant.
       var slug = gerarSlug(dados.nomeAcademia);
       var orgId = slug + "-" + emailLimpo.replace(/[^a-z0-9]/g, "").slice(0, 10);
       var agora = firebase.firestore.FieldValue.serverTimestamp();
 
+      // 2) Cria a academia (organização / tenant). Regra: criar = autenticado.
       try {
         await _db.collection("organizations").doc(orgId).set({
           nome: dados.nomeAcademia,
@@ -122,30 +100,57 @@
         throw marcarEtapa("FIRESTORE (salvar academia)", e);
       }
 
-      // 5) Membership global (userId_orgId) para a troca de academia.
-      try {
-        await _db.collection("memberships").doc(uid + "_" + orgId).set({
-          userId: uid,
-          organizationId: orgId,
-          role: "owner",
-          email: emailLimpo,
-          criadoEm: agora
-        }, { merge: true });
-      } catch (e) {
-        throw marcarEtapa("FIRESTORE (salvar membership)", e);
-      }
-
-      // 6) Membro dentro da organização (papel owner).
+      // 3) Membership de owner dentro da organização. Regra: bootstrap do fundador.
       try {
         await _db.collection("organizations").doc(orgId).collection("members").doc(uid).set({
           userId: uid,
           email: emailLimpo,
           nome: dados.nome,
           role: "owner",
+          status: "ativo",
+          organizationId: orgId,
           criadoEm: agora
         }, { merge: true });
       } catch (e) {
         throw marcarEtapa("FIRESTORE (salvar membro da academia)", e);
+      }
+
+      // 4) Perfil público do usuário (gestor) DENTRO da organização. Regra: staff.
+      try {
+        await _db.collection("organizations").doc(orgId).collection("usuarios").doc(emailLimpo).set({
+          id: emailLimpo,
+          email: emailLimpo,
+          nome: dados.nome,
+          telefone: dados.telefone,
+          ddd: dados.ddd,
+          telefone_limpo: dados.telefone_limpo,
+          telefone_completo: dados.telefone_completo,
+          papeis: { gestor: true },
+          roles: { gestor: true },
+          status: "Ativo",
+          organizationId: orgId,
+          criadoEm: agora,
+          atualizadoEm: agora,
+          permissoes: {
+            viewFinance: true,
+            manageFinance: true,
+            manageUsers: true,
+            manageClasses: true,
+            manageEvents: true
+          }
+        });
+      } catch (e) {
+        throw marcarEtapa("FIRESTORE (salvar usuário)", e);
+      }
+
+      // 5) Guarda o PIN na subcoleção segura DENTRO da organização.
+      try {
+        await _db.collection("organizations").doc(orgId).collection("usuarios").doc(emailLimpo).collection("privado").doc("segredos").set({
+          pin: pin,
+          updatedAt: agora
+        }, { merge: true });
+      } catch (e) {
+        throw marcarEtapa("FIRESTORE (salvar PIN)", e);
       }
 
       return {
