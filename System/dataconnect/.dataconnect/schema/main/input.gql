@@ -1,0 +1,895 @@
+"""
+✨ `Event_KeyOutput` returns the primary key fields of table type `Event`.
+
+It has the same format as `Event_Key`, but is only used as mutation return value.
+"""
+scalar Event_KeyOutput
+"""
+✨ `EventParticipant_KeyOutput` returns the primary key fields of table type `EventParticipant`.
+
+It has the same format as `EventParticipant_Key`, but is only used as mutation return value.
+"""
+scalar EventParticipant_KeyOutput
+"""
+✨ `Transaction_KeyOutput` returns the primary key fields of table type `Transaction`.
+
+It has the same format as `Transaction_Key`, but is only used as mutation return value.
+"""
+scalar Transaction_KeyOutput
+"""
+✨ Generated data input type for table 'Event'. It includes all necessary fields for creating or upserting rows into table.
+"""
+input Event_Data {
+  """
+  ✨ Generated from Field `Event`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Event`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr @fdc_forbiddenInVariables
+  """
+  ✨ Generated from Field `Event`.`date` of type `Timestamp!`
+  """
+  date: Timestamp
+  """
+  ✨ `_expr` server value variant of `date` (✨ Generated from Field `Event`.`date` of type `Timestamp!`)
+  """
+  date_expr: Timestamp_Expr @fdc_forbiddenInVariables
+  """
+  ✨ `_time` server value variant of `date` (✨ Generated from Field `Event`.`date` of type `Timestamp!`)
+  """
+  date_time: Timestamp_Relative @fdc_forbiddenInVariables
+  """
+  ✨ `_update` server value variant of `date` (✨ Generated from Field `Event`.`date` of type `Timestamp!`)
+  """
+  date_update: [Timestamp_Update!] @fdc_forbiddenInVariables
+  """
+  ✨ Generated from Field `Event`.`description` of type `String`
+  """
+  description: String
+  """
+  ✨ `_expr` server value variant of `description` (✨ Generated from Field `Event`.`description` of type `String`)
+  """
+  description_expr: String_Expr @fdc_forbiddenInVariables
+  """
+  ✨ Generated from Field `Event`.`isPublic` of type `Boolean!`
+  """
+  isPublic: Boolean
+  """
+  ✨ `_expr` server value variant of `isPublic` (✨ Generated from Field `Event`.`isPublic` of type `Boolean!`)
+  """
+  isPublic_expr: Boolean_Expr @fdc_forbiddenInVariables
+  """
+  ✨ Generated from Field `Event`.`location` of type `String`
+  """
+  location: String
+  """
+  ✨ `_expr` server value variant of `location` (✨ Generated from Field `Event`.`location` of type `String`)
+  """
+  location_expr: String_Expr @fdc_forbiddenInVariables
+  """
+  ✨ Generated from Field `Event`.`title` of type `String!`
+  """
+  title: String
+  """
+  ✨ `_expr` server value variant of `title` (✨ Generated from Field `Event`.`title` of type `String!`)
+  """
+  title_expr: String_Expr @fdc_forbiddenInVariables
+  """
+  ✨ Generated from Field `Event`.`type` of type `String!`
+  """
+  type: String
+  """
+  ✨ `_expr` server value variant of `type` (✨ Generated from Field `Event`.`type` of type `String!`)
+  """
+  type_expr: String_Expr @fdc_forbiddenInVariables
+  """
+  ✨ Generated from Field `Event`.`eventParticipants_on_event` of type `[EventParticipant!]!`
+  """
+  eventParticipants_on_event: [EventParticipant_Data!]
+}
+"""
+✨ Generated filter input type for table 'Event'. This input allows filtering objects using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Event_Filter {
+  """
+  Apply multiple filter conditions using `AND` logic.
+  """
+  _and: [Event_Filter!]
+  """
+  Negate the result of the provided filter condition.
+  """
+  _not: Event_Filter
+  """
+  Apply multiple filter conditions using `OR` logic.
+  """
+  _or: [Event_Filter!]
+  """
+  ✨ Generated from Field `Event`.`id` of type `UUID!`
+  """
+  id: UUID_Filter
+  """
+  ✨ Generated from Field `Event`.`date` of type `Timestamp!`
+  """
+  date: Timestamp_Filter
+  """
+  ✨ Generated from Field `Event`.`description` of type `String`
+  """
+  description: String_Filter
+  """
+  ✨ Generated from Field `Event`.`isPublic` of type `Boolean!`
+  """
+  isPublic: Boolean_Filter
+  """
+  ✨ Generated from Field `Event`.`location` of type `String`
+  """
+  location: String_Filter
+  """
+  ✨ Generated from Field `Event`.`title` of type `String!`
+  """
+  title: String_Filter
+  """
+  ✨ Generated from Field `Event`.`type` of type `String!`
+  """
+  type: String_Filter
+  """
+  ✨ Generated from Field `Event`.`eventParticipants_on_event` of type `[EventParticipant!]!`
+  """
+  eventParticipants_on_event: EventParticipant_ListFilter
+}
+"""
+✨ Generated first-row input type for table 'Event'. This input selects the first row matching the filter criteria, ordered according to the specified conditions.
+"""
+input Event_FirstRow {
+  """
+  Order the result by the specified fields.
+  """
+  orderBy: [Event_Order!]
+  """
+  Filters rows based on the specified conditions.
+  """
+  where: Event_Filter
+}
+"""
+✨ Generated having input type for table 'Event'. This input allows you to filter groups during aggregate queries using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Event_Having {
+  """
+  Apply multiple Having conditions using `AND` logic.
+  """
+  _and: [Event_Having!]
+  """
+  Whether to apply DISTINCT to the aggregate function.
+  """
+  _distinct: Boolean
+  """
+  Negate the result of the provided Having condition.
+  """
+  _not: Event_Having
+  """
+  Apply multiple Having conditions using `OR` logic.
+  """
+  _or: [Event_Having!]
+  """
+  ✨ Generated from Field `Event`.`_count` of type `Int!`
+  """
+  _count: Int_Filter
+  """
+  ✨ Generated from Field `Event`.`date_count` of type `Int!`
+  """
+  date_count: Int_Filter
+  """
+  ✨ Generated from Field `Event`.`description_count` of type `Int!`
+  """
+  description_count: Int_Filter
+  """
+  ✨ Generated from Field `Event`.`id_count` of type `Int!`
+  """
+  id_count: Int_Filter
+  """
+  ✨ Generated from Field `Event`.`isPublic_count` of type `Int!`
+  """
+  isPublic_count: Int_Filter
+  """
+  ✨ Generated from Field `Event`.`location_count` of type `Int!`
+  """
+  location_count: Int_Filter
+  """
+  ✨ Generated from Field `Event`.`title_count` of type `Int!`
+  """
+  title_count: Int_Filter
+  """
+  ✨ Generated from Field `Event`.`type_count` of type `Int!`
+  """
+  type_count: Int_Filter
+  """
+  ✨ Generated from Field `Event`.`date_min` of type `Timestamp`
+  """
+  date_min: Timestamp_Filter
+  """
+  ✨ Generated from Field `Event`.`date_max` of type `Timestamp`
+  """
+  date_max: Timestamp_Filter
+}
+"""
+✨ Generated key input type for table 'Event'. It represents the primary key fields used to uniquely identify a row in the table.
+"""
+input Event_Key {
+  """
+  ✨ Generated from Field `Event`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Event`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr @fdc_forbiddenInVariables
+}
+"""
+✨ Generated list filter input type for table 'Event'. This input applies filtering logic based on the count or existence of related objects that matches certain criteria.
+"""
+input Event_ListFilter {
+  """
+  The desired number of objects that match the condition (defaults to at least one).
+  """
+  count: Int_Filter = {gt:0}
+  """
+  Condition of the related objects to filter for.
+  """
+  exist: Event_Filter
+}
+"""
+✨ Generated order input type for table 'Event'. This input defines the sorting order of rows in query results based on one or more fields.
+"""
+input Event_Order {
+  """
+  ✨ Generated from Field `Event`.`id` of type `UUID!`
+  """
+  id: OrderDirection
+  """
+  ✨ Generated from Field `Event`.`date` of type `Timestamp!`
+  """
+  date: OrderDirection
+  """
+  ✨ Generated from Field `Event`.`description` of type `String`
+  """
+  description: OrderDirection
+  """
+  ✨ Generated from Field `Event`.`isPublic` of type `Boolean!`
+  """
+  isPublic: OrderDirection
+  """
+  ✨ Generated from Field `Event`.`location` of type `String`
+  """
+  location: OrderDirection
+  """
+  ✨ Generated from Field `Event`.`title` of type `String!`
+  """
+  title: OrderDirection
+  """
+  ✨ Generated from Field `Event`.`type` of type `String!`
+  """
+  type: OrderDirection
+  """
+  ✨ Generated from Field `Event`.`_count` of type `Int!`
+  """
+  _count: OrderDirection
+  """
+  ✨ Generated from Field `Event`.`date_count` of type `Int!`
+  """
+  date_count: OrderDirection
+  """
+  ✨ Generated from Field `Event`.`description_count` of type `Int!`
+  """
+  description_count: OrderDirection
+  """
+  ✨ Generated from Field `Event`.`id_count` of type `Int!`
+  """
+  id_count: OrderDirection
+  """
+  ✨ Generated from Field `Event`.`isPublic_count` of type `Int!`
+  """
+  isPublic_count: OrderDirection
+  """
+  ✨ Generated from Field `Event`.`location_count` of type `Int!`
+  """
+  location_count: OrderDirection
+  """
+  ✨ Generated from Field `Event`.`title_count` of type `Int!`
+  """
+  title_count: OrderDirection
+  """
+  ✨ Generated from Field `Event`.`type_count` of type `Int!`
+  """
+  type_count: OrderDirection
+  """
+  ✨ Generated from Field `Event`.`date_min` of type `Timestamp`
+  """
+  date_min: OrderDirection
+  """
+  ✨ Generated from Field `Event`.`date_max` of type `Timestamp`
+  """
+  date_max: OrderDirection
+}
+"""
+✨ Generated data input type for table 'EventParticipant'. It includes all necessary fields for creating or upserting rows into table.
+"""
+input EventParticipant_Data {
+  """
+  ✨ Generated from Field `EventParticipant`.`eventId` of type `UUID!`
+  """
+  eventId: UUID
+  """
+  ✨ `_expr` server value variant of `eventId` (✨ Generated from Field `EventParticipant`.`eventId` of type `UUID!`)
+  """
+  eventId_expr: UUID_Expr @fdc_forbiddenInVariables
+  """
+  ✨ Generated from Field `EventParticipant`.`studentId` of type `String!`
+  """
+  studentId: String
+  """
+  ✨ `_expr` server value variant of `studentId` (✨ Generated from Field `EventParticipant`.`studentId` of type `String!`)
+  """
+  studentId_expr: String_Expr @fdc_forbiddenInVariables
+  """
+  ✨ Generated from Field `EventParticipant`.`event` of type `Event!`
+  """
+  event: Event_Key @fdc_forbiddenInVariables
+  """
+  ✨ Generated from Field `EventParticipant`.`registeredAt` of type `Timestamp!`
+  """
+  registeredAt: Timestamp
+  """
+  ✨ `_expr` server value variant of `registeredAt` (✨ Generated from Field `EventParticipant`.`registeredAt` of type `Timestamp!`)
+  """
+  registeredAt_expr: Timestamp_Expr @fdc_forbiddenInVariables
+  """
+  ✨ `_time` server value variant of `registeredAt` (✨ Generated from Field `EventParticipant`.`registeredAt` of type `Timestamp!`)
+  """
+  registeredAt_time: Timestamp_Relative @fdc_forbiddenInVariables
+  """
+  ✨ `_update` server value variant of `registeredAt` (✨ Generated from Field `EventParticipant`.`registeredAt` of type `Timestamp!`)
+  """
+  registeredAt_update: [Timestamp_Update!] @fdc_forbiddenInVariables
+}
+"""
+✨ Generated filter input type for table 'EventParticipant'. This input allows filtering objects using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input EventParticipant_Filter {
+  """
+  Apply multiple filter conditions using `AND` logic.
+  """
+  _and: [EventParticipant_Filter!]
+  """
+  Negate the result of the provided filter condition.
+  """
+  _not: EventParticipant_Filter
+  """
+  Apply multiple filter conditions using `OR` logic.
+  """
+  _or: [EventParticipant_Filter!]
+  """
+  ✨ Generated from Field `EventParticipant`.`eventId` of type `UUID!`
+  """
+  eventId: UUID_Filter
+  """
+  ✨ Generated from Field `EventParticipant`.`studentId` of type `String!`
+  """
+  studentId: String_Filter
+  """
+  ✨ Generated from Field `EventParticipant`.`event` of type `Event!`
+  """
+  event: Event_Filter
+  """
+  ✨ Generated from Field `EventParticipant`.`registeredAt` of type `Timestamp!`
+  """
+  registeredAt: Timestamp_Filter
+}
+"""
+✨ Generated first-row input type for table 'EventParticipant'. This input selects the first row matching the filter criteria, ordered according to the specified conditions.
+"""
+input EventParticipant_FirstRow {
+  """
+  Order the result by the specified fields.
+  """
+  orderBy: [EventParticipant_Order!]
+  """
+  Filters rows based on the specified conditions.
+  """
+  where: EventParticipant_Filter
+}
+"""
+✨ Generated having input type for table 'EventParticipant'. This input allows you to filter groups during aggregate queries using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input EventParticipant_Having {
+  """
+  Apply multiple Having conditions using `AND` logic.
+  """
+  _and: [EventParticipant_Having!]
+  """
+  Whether to apply DISTINCT to the aggregate function.
+  """
+  _distinct: Boolean
+  """
+  Negate the result of the provided Having condition.
+  """
+  _not: EventParticipant_Having
+  """
+  Apply multiple Having conditions using `OR` logic.
+  """
+  _or: [EventParticipant_Having!]
+  """
+  ✨ Generated from Field `EventParticipant`.`_count` of type `Int!`
+  """
+  _count: Int_Filter
+  """
+  ✨ Generated from Field `EventParticipant`.`eventId_count` of type `Int!`
+  """
+  eventId_count: Int_Filter
+  """
+  ✨ Generated from Field `EventParticipant`.`registeredAt_count` of type `Int!`
+  """
+  registeredAt_count: Int_Filter
+  """
+  ✨ Generated from Field `EventParticipant`.`studentId_count` of type `Int!`
+  """
+  studentId_count: Int_Filter
+  """
+  ✨ Generated from Field `EventParticipant`.`registeredAt_min` of type `Timestamp`
+  """
+  registeredAt_min: Timestamp_Filter
+  """
+  ✨ Generated from Field `EventParticipant`.`registeredAt_max` of type `Timestamp`
+  """
+  registeredAt_max: Timestamp_Filter
+}
+"""
+✨ Generated key input type for table 'EventParticipant'. It represents the primary key fields used to uniquely identify a row in the table.
+"""
+input EventParticipant_Key {
+  """
+  ✨ Generated from Field `EventParticipant`.`eventId` of type `UUID!`
+  """
+  eventId: UUID
+  """
+  ✨ `_expr` server value variant of `eventId` (✨ Generated from Field `EventParticipant`.`eventId` of type `UUID!`)
+  """
+  eventId_expr: UUID_Expr @fdc_forbiddenInVariables
+  """
+  ✨ Generated from Field `EventParticipant`.`studentId` of type `String!`
+  """
+  studentId: String
+  """
+  ✨ `_expr` server value variant of `studentId` (✨ Generated from Field `EventParticipant`.`studentId` of type `String!`)
+  """
+  studentId_expr: String_Expr @fdc_forbiddenInVariables
+}
+"""
+✨ Generated list filter input type for table 'EventParticipant'. This input applies filtering logic based on the count or existence of related objects that matches certain criteria.
+"""
+input EventParticipant_ListFilter {
+  """
+  The desired number of objects that match the condition (defaults to at least one).
+  """
+  count: Int_Filter = {gt:0}
+  """
+  Condition of the related objects to filter for.
+  """
+  exist: EventParticipant_Filter
+}
+"""
+✨ Generated order input type for table 'EventParticipant'. This input defines the sorting order of rows in query results based on one or more fields.
+"""
+input EventParticipant_Order {
+  """
+  ✨ Generated from Field `EventParticipant`.`eventId` of type `UUID!`
+  """
+  eventId: OrderDirection
+  """
+  ✨ Generated from Field `EventParticipant`.`studentId` of type `String!`
+  """
+  studentId: OrderDirection
+  """
+  ✨ Generated from Field `EventParticipant`.`event` of type `Event!`
+  """
+  event: Event_Order
+  """
+  ✨ Generated from Field `EventParticipant`.`registeredAt` of type `Timestamp!`
+  """
+  registeredAt: OrderDirection
+  """
+  ✨ Generated from Field `EventParticipant`.`_count` of type `Int!`
+  """
+  _count: OrderDirection
+  """
+  ✨ Generated from Field `EventParticipant`.`eventId_count` of type `Int!`
+  """
+  eventId_count: OrderDirection
+  """
+  ✨ Generated from Field `EventParticipant`.`registeredAt_count` of type `Int!`
+  """
+  registeredAt_count: OrderDirection
+  """
+  ✨ Generated from Field `EventParticipant`.`studentId_count` of type `Int!`
+  """
+  studentId_count: OrderDirection
+  """
+  ✨ Generated from Field `EventParticipant`.`registeredAt_min` of type `Timestamp`
+  """
+  registeredAt_min: OrderDirection
+  """
+  ✨ Generated from Field `EventParticipant`.`registeredAt_max` of type `Timestamp`
+  """
+  registeredAt_max: OrderDirection
+}
+"""
+✨ Generated data input type for table 'Transaction'. It includes all necessary fields for creating or upserting rows into table.
+"""
+input Transaction_Data {
+  """
+  ✨ Generated from Field `Transaction`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Transaction`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr @fdc_forbiddenInVariables
+  """
+  ✨ Generated from Field `Transaction`.`amount` of type `Float!`
+  """
+  amount: Float
+  """
+  ✨ `_expr` server value variant of `amount` (✨ Generated from Field `Transaction`.`amount` of type `Float!`)
+  """
+  amount_expr: Float_Expr @fdc_forbiddenInVariables
+  """
+  ✨ `_update` server value variant of `amount` (✨ Generated from Field `Transaction`.`amount` of type `Float!`)
+  """
+  amount_update: [Float_Update!] @fdc_forbiddenInVariables
+  """
+  ✨ Generated from Field `Transaction`.`category` of type `String!`
+  """
+  category: String
+  """
+  ✨ `_expr` server value variant of `category` (✨ Generated from Field `Transaction`.`category` of type `String!`)
+  """
+  category_expr: String_Expr @fdc_forbiddenInVariables
+  """
+  ✨ Generated from Field `Transaction`.`description` of type `String`
+  """
+  description: String
+  """
+  ✨ `_expr` server value variant of `description` (✨ Generated from Field `Transaction`.`description` of type `String`)
+  """
+  description_expr: String_Expr @fdc_forbiddenInVariables
+  """
+  ✨ Generated from Field `Transaction`.`dueDate` of type `Date!`
+  """
+  dueDate: Date
+  """
+  ✨ `_date` server value variant of `dueDate` (✨ Generated from Field `Transaction`.`dueDate` of type `Date!`)
+  """
+  dueDate_date: Date_Relative @fdc_forbiddenInVariables
+  """
+  ✨ `_expr` server value variant of `dueDate` (✨ Generated from Field `Transaction`.`dueDate` of type `Date!`)
+  """
+  dueDate_expr: Date_Expr @fdc_forbiddenInVariables
+  """
+  ✨ `_update` server value variant of `dueDate` (✨ Generated from Field `Transaction`.`dueDate` of type `Date!`)
+  """
+  dueDate_update: [Date_Update!] @fdc_forbiddenInVariables
+  """
+  ✨ Generated from Field `Transaction`.`paidAt` of type `Timestamp`
+  """
+  paidAt: Timestamp
+  """
+  ✨ `_expr` server value variant of `paidAt` (✨ Generated from Field `Transaction`.`paidAt` of type `Timestamp`)
+  """
+  paidAt_expr: Timestamp_Expr @fdc_forbiddenInVariables
+  """
+  ✨ `_time` server value variant of `paidAt` (✨ Generated from Field `Transaction`.`paidAt` of type `Timestamp`)
+  """
+  paidAt_time: Timestamp_Relative @fdc_forbiddenInVariables
+  """
+  ✨ `_update` server value variant of `paidAt` (✨ Generated from Field `Transaction`.`paidAt` of type `Timestamp`)
+  """
+  paidAt_update: [Timestamp_Update!] @fdc_forbiddenInVariables
+  """
+  ✨ Generated from Field `Transaction`.`status` of type `String!`
+  """
+  status: String
+  """
+  ✨ `_expr` server value variant of `status` (✨ Generated from Field `Transaction`.`status` of type `String!`)
+  """
+  status_expr: String_Expr @fdc_forbiddenInVariables
+  """
+  ✨ Generated from Field `Transaction`.`studentId` of type `String!`
+  """
+  studentId: String
+  """
+  ✨ `_expr` server value variant of `studentId` (✨ Generated from Field `Transaction`.`studentId` of type `String!`)
+  """
+  studentId_expr: String_Expr @fdc_forbiddenInVariables
+}
+"""
+✨ Generated filter input type for table 'Transaction'. This input allows filtering objects using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Transaction_Filter {
+  """
+  Apply multiple filter conditions using `AND` logic.
+  """
+  _and: [Transaction_Filter!]
+  """
+  Negate the result of the provided filter condition.
+  """
+  _not: Transaction_Filter
+  """
+  Apply multiple filter conditions using `OR` logic.
+  """
+  _or: [Transaction_Filter!]
+  """
+  ✨ Generated from Field `Transaction`.`id` of type `UUID!`
+  """
+  id: UUID_Filter
+  """
+  ✨ Generated from Field `Transaction`.`amount` of type `Float!`
+  """
+  amount: Float_Filter
+  """
+  ✨ Generated from Field `Transaction`.`category` of type `String!`
+  """
+  category: String_Filter
+  """
+  ✨ Generated from Field `Transaction`.`description` of type `String`
+  """
+  description: String_Filter
+  """
+  ✨ Generated from Field `Transaction`.`dueDate` of type `Date!`
+  """
+  dueDate: Date_Filter
+  """
+  ✨ Generated from Field `Transaction`.`paidAt` of type `Timestamp`
+  """
+  paidAt: Timestamp_Filter
+  """
+  ✨ Generated from Field `Transaction`.`status` of type `String!`
+  """
+  status: String_Filter
+  """
+  ✨ Generated from Field `Transaction`.`studentId` of type `String!`
+  """
+  studentId: String_Filter
+}
+"""
+✨ Generated first-row input type for table 'Transaction'. This input selects the first row matching the filter criteria, ordered according to the specified conditions.
+"""
+input Transaction_FirstRow {
+  """
+  Order the result by the specified fields.
+  """
+  orderBy: [Transaction_Order!]
+  """
+  Filters rows based on the specified conditions.
+  """
+  where: Transaction_Filter
+}
+"""
+✨ Generated having input type for table 'Transaction'. This input allows you to filter groups during aggregate queries using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Transaction_Having {
+  """
+  Apply multiple Having conditions using `AND` logic.
+  """
+  _and: [Transaction_Having!]
+  """
+  Whether to apply DISTINCT to the aggregate function.
+  """
+  _distinct: Boolean
+  """
+  Negate the result of the provided Having condition.
+  """
+  _not: Transaction_Having
+  """
+  Apply multiple Having conditions using `OR` logic.
+  """
+  _or: [Transaction_Having!]
+  """
+  ✨ Generated from Field `Transaction`.`_count` of type `Int!`
+  """
+  _count: Int_Filter
+  """
+  ✨ Generated from Field `Transaction`.`amount_count` of type `Int!`
+  """
+  amount_count: Int_Filter
+  """
+  ✨ Generated from Field `Transaction`.`category_count` of type `Int!`
+  """
+  category_count: Int_Filter
+  """
+  ✨ Generated from Field `Transaction`.`description_count` of type `Int!`
+  """
+  description_count: Int_Filter
+  """
+  ✨ Generated from Field `Transaction`.`dueDate_count` of type `Int!`
+  """
+  dueDate_count: Int_Filter
+  """
+  ✨ Generated from Field `Transaction`.`id_count` of type `Int!`
+  """
+  id_count: Int_Filter
+  """
+  ✨ Generated from Field `Transaction`.`paidAt_count` of type `Int!`
+  """
+  paidAt_count: Int_Filter
+  """
+  ✨ Generated from Field `Transaction`.`status_count` of type `Int!`
+  """
+  status_count: Int_Filter
+  """
+  ✨ Generated from Field `Transaction`.`studentId_count` of type `Int!`
+  """
+  studentId_count: Int_Filter
+  """
+  ✨ Generated from Field `Transaction`.`amount_sum` of type `Float`
+  """
+  amount_sum: Float_Filter
+  """
+  ✨ Generated from Field `Transaction`.`amount_avg` of type `Float`
+  """
+  amount_avg: Float_Filter
+  """
+  ✨ Generated from Field `Transaction`.`amount_min` of type `Float`
+  """
+  amount_min: Float_Filter
+  """
+  ✨ Generated from Field `Transaction`.`dueDate_min` of type `Date`
+  """
+  dueDate_min: Date_Filter
+  """
+  ✨ Generated from Field `Transaction`.`paidAt_min` of type `Timestamp`
+  """
+  paidAt_min: Timestamp_Filter
+  """
+  ✨ Generated from Field `Transaction`.`amount_max` of type `Float`
+  """
+  amount_max: Float_Filter
+  """
+  ✨ Generated from Field `Transaction`.`dueDate_max` of type `Date`
+  """
+  dueDate_max: Date_Filter
+  """
+  ✨ Generated from Field `Transaction`.`paidAt_max` of type `Timestamp`
+  """
+  paidAt_max: Timestamp_Filter
+}
+"""
+✨ Generated key input type for table 'Transaction'. It represents the primary key fields used to uniquely identify a row in the table.
+"""
+input Transaction_Key {
+  """
+  ✨ Generated from Field `Transaction`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Transaction`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr @fdc_forbiddenInVariables
+}
+"""
+✨ Generated list filter input type for table 'Transaction'. This input applies filtering logic based on the count or existence of related objects that matches certain criteria.
+"""
+input Transaction_ListFilter {
+  """
+  The desired number of objects that match the condition (defaults to at least one).
+  """
+  count: Int_Filter = {gt:0}
+  """
+  Condition of the related objects to filter for.
+  """
+  exist: Transaction_Filter
+}
+"""
+✨ Generated order input type for table 'Transaction'. This input defines the sorting order of rows in query results based on one or more fields.
+"""
+input Transaction_Order {
+  """
+  ✨ Generated from Field `Transaction`.`id` of type `UUID!`
+  """
+  id: OrderDirection
+  """
+  ✨ Generated from Field `Transaction`.`amount` of type `Float!`
+  """
+  amount: OrderDirection
+  """
+  ✨ Generated from Field `Transaction`.`category` of type `String!`
+  """
+  category: OrderDirection
+  """
+  ✨ Generated from Field `Transaction`.`description` of type `String`
+  """
+  description: OrderDirection
+  """
+  ✨ Generated from Field `Transaction`.`dueDate` of type `Date!`
+  """
+  dueDate: OrderDirection
+  """
+  ✨ Generated from Field `Transaction`.`paidAt` of type `Timestamp`
+  """
+  paidAt: OrderDirection
+  """
+  ✨ Generated from Field `Transaction`.`status` of type `String!`
+  """
+  status: OrderDirection
+  """
+  ✨ Generated from Field `Transaction`.`studentId` of type `String!`
+  """
+  studentId: OrderDirection
+  """
+  ✨ Generated from Field `Transaction`.`_count` of type `Int!`
+  """
+  _count: OrderDirection
+  """
+  ✨ Generated from Field `Transaction`.`amount_count` of type `Int!`
+  """
+  amount_count: OrderDirection
+  """
+  ✨ Generated from Field `Transaction`.`category_count` of type `Int!`
+  """
+  category_count: OrderDirection
+  """
+  ✨ Generated from Field `Transaction`.`description_count` of type `Int!`
+  """
+  description_count: OrderDirection
+  """
+  ✨ Generated from Field `Transaction`.`dueDate_count` of type `Int!`
+  """
+  dueDate_count: OrderDirection
+  """
+  ✨ Generated from Field `Transaction`.`id_count` of type `Int!`
+  """
+  id_count: OrderDirection
+  """
+  ✨ Generated from Field `Transaction`.`paidAt_count` of type `Int!`
+  """
+  paidAt_count: OrderDirection
+  """
+  ✨ Generated from Field `Transaction`.`status_count` of type `Int!`
+  """
+  status_count: OrderDirection
+  """
+  ✨ Generated from Field `Transaction`.`studentId_count` of type `Int!`
+  """
+  studentId_count: OrderDirection
+  """
+  ✨ Generated from Field `Transaction`.`amount_sum` of type `Float`
+  """
+  amount_sum: OrderDirection
+  """
+  ✨ Generated from Field `Transaction`.`amount_avg` of type `Float`
+  """
+  amount_avg: OrderDirection
+  """
+  ✨ Generated from Field `Transaction`.`amount_min` of type `Float`
+  """
+  amount_min: OrderDirection
+  """
+  ✨ Generated from Field `Transaction`.`dueDate_min` of type `Date`
+  """
+  dueDate_min: OrderDirection
+  """
+  ✨ Generated from Field `Transaction`.`paidAt_min` of type `Timestamp`
+  """
+  paidAt_min: OrderDirection
+  """
+  ✨ Generated from Field `Transaction`.`amount_max` of type `Float`
+  """
+  amount_max: OrderDirection
+  """
+  ✨ Generated from Field `Transaction`.`dueDate_max` of type `Date`
+  """
+  dueDate_max: OrderDirection
+  """
+  ✨ Generated from Field `Transaction`.`paidAt_max` of type `Timestamp`
+  """
+  paidAt_max: OrderDirection
+}

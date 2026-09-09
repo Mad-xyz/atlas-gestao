@@ -1,0 +1,31 @@
+# Academy Management Schema
+
+# Events: seminars, competitions, workshops, etc.
+type Event @table {
+  id: UUID! @default(expr: "uuidV4()")
+  title: String!
+  description: String
+  date: Timestamp!
+  type: String! # 'workshop', 'competition', 'seminar', 'holiday'
+  location: String
+  isPublic: Boolean! @default(value: true)
+}
+
+# Financial Transactions: monthly fees, gear purchases, etc.
+type Transaction @table {
+  id: UUID! @default(expr: "uuidV4()")
+  studentId: String! # References student ID in Firestore
+  amount: Float!
+  description: String
+  status: String! # 'pending', 'paid', 'overdue'
+  dueDate: Date!
+  paidAt: Timestamp
+  category: String! # 'monthly_fee', 'equipment', 'other'
+}
+
+# Optional: Link between Students and Events if needed (Many-to-Many)
+type EventParticipant @table(key: ["event", "studentId"]) {
+  event: Event!
+  studentId: String! # References student ID from Firestore
+  registeredAt: Timestamp! @default(expr: "request.time")
+}

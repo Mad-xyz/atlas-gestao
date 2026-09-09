@@ -1,0 +1,63 @@
+# ===== Dependências =====
+node_modules/
+
+# ===== Builds / saída =====
+dist/
+dist-ssr/
+dist_malformed/
+build/
+
+# ===== Firebase & Segredos (NUNCA commitar) =====
+firebase-key.json
+*.key.json
+service-account*.json
+.firebase/
+firebase-debug.log
+.firebaserc.local
+
+# ===== Ambiente =====
+.env
+.env.*
+.env.local
+!.env.example
+
+# ===== Logs =====
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+
+# ===== Ferramentas / Agentic =====
+.agents/
+.gemini/
+.codex/
+.rum/
+.kilo/
+scratch/
+
+# ===== Editor / SO =====
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.sln
+*.sw?
+
+# ===== Cache / temporários =====
+.cache/
+.temp/
+tmp/
+*.tmp
+*.bak
+
+# ===== Android (evita assinar APKs falsos) =====
+*.jks
+*.keystore
+.eos/
+.ohmyagent/
+.pawnpro/
+.monkeycode/
+.gemini/
+.multi-tenant

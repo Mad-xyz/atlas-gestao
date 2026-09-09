@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crie sua academia gratuitamente - Atralas</title>
+  <meta name="description" content="Crie sua academia gratuitamente no Atralas e comece a gerenciar alunos, mensalidades e turmas em um só lugar." />
+  <link rel="icon" type="image/png" href="img/favicon.png" />
+  <link rel="apple-touch-icon" href="img/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="preload" href="css/styles.css" as="style" />
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <!-- Configuração central (Firebase + endereço do login do Atralas). -->
+  <script src="js/firebase-config.js"></script>
+
+  <!-- Firebase (Compat SDK) — usado para salvar os dados no banco com validação no servidor. -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+
+  <script>
+    // Inicializa o Firebase com a configuração central (js/firebase-config.js).
+    firebase.initializeApp(window.FIREBASE_CONFIG);
+    var _auth = firebase.auth();
+    var _db = firebase.firestore();
+
+    // Remove acentos e caracteres inválidos para gerar um slug de documento (doc id).
+    function gerarSlug(texto) {
+      return String(texto || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 60) || "academia";
+    }
+
+    /**
+     * cadastrarAcademia(dados)
+     * Executa o cadastro em etapas seguras (modelo multi-tenant):
+     *  1. `createUserWithEmailAndPassword` — Firebase Auth cria a conta.
+     *  2. `organizations/{orgId}` — cria a academia (tenant). Regra: autenticado.
+     *  3. `organizations/{orgId}/members/{uid}` — membership de owner (bootstrap).
+     *  4. `organizations/{orgId}/usuarios/{email}` — perfil do gestor.
+     *  5. `organizations/{orgId}/usuarios/{email}/privado/segredos` — PIN seguro.
+     * Ordem obrigatória: org → member → perfil, para que as regras (staff) autorizem.
+     */
+    window.cadastrarAcademia = async function (dados) {
+      var emailLimpo = String(dados.email || "").toLowerCase().trim();
+      var pin = String(dados.pin || "").replace(/\D/g, "").slice(0, 6);
+
+      // Indica qual etapa falhou para facilitar o diagnóstico.
+      function marcarEtapa(nomeEtapa, erro) {
+        var e = new Error(nomeEtapa + ": " + (erro && (erro.code || erro.message) || "erro"));
+        e.etapa = nomeEtapa;
+        e.code = erro && erro.code;
+        return e;
+      }
+
+      // 1) Cria a conta no Firebase Auth (o servidor valida email/senha).
+      //    Idempotente: se a conta já existe (cadastro anterior incompleto), autentica
+      //    para reaproveitar o mesmo UID e continua com a criação da org/membership/perfil.
+      var credencial;
+      try {
+        credencial = await _auth.createUserWithEmailAndPassword(emailLimpo, pin);
+      } catch (e) {
+        if (e.code === "auth/email-already-in-use") {
+          try {
+            credencial = await _auth.signInWithEmailAndPassword(emailLimpo, pin);
+            await _auth.signOut();
+          } catch (e2) {
+            throw marcarEtapa("AUTH (email já em uso)", e2);
+          }
+        } else {
+          throw marcarEtapa("AUTH (criar conta)", e);
+        }
+      }
+      var uid = credencial.user.uid;
+
+      var slug = gerarSlug(dados.nomeAcademia);
+      var orgId = slug + "-" + emailLimpo.replace(/[^a-z0-9]/g, "").slice(0, 10);
+      var agora = firebase.firestore.FieldValue.serverTimestamp();
+
+      // 2) Cria a academia (organização / tenant). Regra: criar = autenticado.
+      try {
+        await _db.collection("organizations").doc(orgId).set({
+          nome: dados.nomeAcademia,
+          slug: slug,
+          status: "ativo",
+          plano: dados.plano || "starter",
+          ownerUid: uid,
+          diagnostico: dados.respostas || [],
+          criadoEm: agora,
+          atualizadoEm: agora
+        }, { merge: true });
+      } catch (e) {
+        throw marcarEtapa("FIRESTORE (salvar academia)", e);
+      }
+
+      // 3) Membership de owner dentro da organização. Regra: bootstrap do fundador.
+      try {
+        await _db.collection("organizations").doc(orgId).collection("members").doc(uid).set({
+          userId: uid,
+          email: emailLimpo,
+          nome: dados.nome,
+          role: "owner",
+          status: "ativo",
+          organizationId: orgId,
+          criadoEm: agora
+        }, { merge: true });
+      } catch (e) {
+        throw marcarEtapa("FIRESTORE (salvar membro da academia)", e);
+      }
+
+      // 4) Perfil público do usuário (gestor) DENTRO da organização. Regra: staff.
+      try {
+        await _db.collection("organizations").doc(orgId).collection("usuarios").doc(emailLimpo).set({
+          id: emailLimpo,
+          email: emailLimpo,
+          nome: dados.nome,
+          telefone: dados.telefone,
+          ddd: dados.ddd,
+          telefone_limpo: dados.telefone_limpo,
+          telefone_completo: dados.telefone_completo,
+          papeis: { gestor: true },
+          roles: { gestor: true },
+          status: "Ativo",
+          organizationId: orgId,
+          criadoEm: agora,
+          atualizadoEm: agora,
+          permissoes: {
+            viewFinance: true,
+            manageFinance: true,
+            manageUsers: true,
+            manageClasses: true,
+            manageEvents: true
+          }
+        });
+      } catch (e) {
+        throw marcarEtapa("FIRESTORE (salvar usuário)", e);
+      }
+
+      // 5) Guarda o PIN na subcoleção segura DENTRO da organização.
+      try {
+        await _db.collection("organizations").doc(orgId).collection("usuarios").doc(emailLimpo).collection("privado").doc("segredos").set({
+          pin: pin,
+          updatedAt: agora
+        }, { merge: true });
+      } catch (e) {
+        throw marcarEtapa("FIRESTORE (salvar PIN)", e);
+      }
+
+      return {
+        email: emailLimpo,
+        pin: pin,
+        organizationId: orgId
+      };
+    };
+  </script>
+</head>
+<body class="pagina-quiz">
+  <main class="quiz-pagina">
+
+    <!-- Voltar para o site -->
+    <a href="index.html" class="quiz-voltar-site">← Voltar ao site</a>
+
+    <div class="quiz-shell">
+      <header class="quiz-header">
+        <a href="index.html" class="quiz-brand">
+          <span class="quiz-brand-logo" aria-hidden="true"></span>
+          <span>atralas</span>
+        </a>
+        <a href="index.html" class="quiz-fechar-link" aria-label="Fechar e voltar ao site">×</a>
+      </header>
+
+      <div class="quiz-corpo">
+
+        <!-- Painel de cadastro -->
+        <section class="quiz-view" id="registroView">
+          <div class="registro-cabecalho">
+            <p class="quiz-categoria">Última etapa</p>
+            <h2 class="registro-titulo">Crie sua academia gratuitamente</h2>
+            <p class="registro-sub">Comece agora — leva menos de um minuto.</p>
+            <span class="registro-plano" id="registroPlano" hidden></span>
+          </div>
+          <form class="registro-form" id="registroForm" novalidate>
+            <div class="form-row">
+              <label for="rAcademia">Nome da academia</label>
+              <input type="text" id="rAcademia" name="academia" placeholder="Ex: Atlas Academy" autocomplete="organization" required />
+            </div>
+            <div class="form-row">
+              <label for="rNome">Nome completo</label>
+              <input type="text" id="rNome" name="nome" placeholder="Seu nome" autocomplete="name" required />
+            </div>
+            <div class="form-row">
+              <label for="rEmail">Email</label>
+              <input type="email" id="rEmail" name="email" placeholder="seu@email.com" autocomplete="email" required />
+            </div>
+            <div class="form-row">
+              <label for="rTelefone">Número de telefone</label>
+              <div class="input-group">
+                <span class="input-prefix">Brasil&nbsp;·&nbsp;+55</span>
+                <input type="tel" id="rTelefone" name="telefone" placeholder="(00) 00000-0000" autocomplete="tel" required />
+              </div>
+            </div>
+            <div class="form-row">
+              <label for="rSenha">PIN de acesso (6 dígitos)</label>
+              <input type="password" id="rSenha" name="senha" placeholder="000000" inputmode="numeric" maxlength="6" autocomplete="new-password" required />
+            </div>
+            <div class="form-row">
+              <label for="rSenhaConfirma">Confirme o PIN</label>
+              <input type="password" id="rSenhaConfirma" name="senhaConfirma" placeholder="Confirme seu PIN" inputmode="numeric" maxlength="6" autocomplete="new-password" required />
+            </div>
+            <label class="quiz-tos" for="rTermos">
+              <input type="checkbox" id="rTermos" name="termos" required />
+              <span>Eu concordo com os <a href="index.html#termos">Termos de Serviço</a> e <a href="index.html#privacidade">políticas de privacidade</a>.</span>
+            </label>
+            <button type="submit" class="btn btn-primary btn-block btn-lg" id="btnEnviar">Criar minha academia</button>
+            <p class="form-erro" id="registroErro" hidden></p>
+            <p class="registro-sucesso" id="registroSucesso" hidden>Cadastro realizado com sucesso!</p>
+          </form>
+        </section>
+
+      </div>
+    </div>
+
+  </main>
+
+  <script src="js/quiz.js" defer></script>
+</body>
+</html>

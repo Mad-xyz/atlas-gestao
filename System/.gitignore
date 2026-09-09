@@ -1,0 +1,67 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+build-log.txt
+build_log*.txt
+.firebase
+
+# Dependency directories
+node_modules/
+
+# Build outputs
+dist/
+dist-ssr/
+dist_malformed/
+
+# Editor and OS files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# AI & Agentic files
+.agents/
+.gemini/
+.codex/
+scratch/
+!I.a/
+.rum/
+.kilo/
+
+# Firebase & Security - NUNCA commitar estes ficheiros
+# A chave de service account dá acesso admin total ao Firebase
+firebase-key.json
+*.key.json
+service-account*.json
+serviceAccount*.json
+scripts/serviceAccount*.json
+.env
+.env.local
+.env.*.local
+storage.rules.bak
+
+# Keystores Android - NUNCA commitar (permite assinar APKs falsos)
+*.jks
+*.keystore
+android/app/google-services.json
+
+# Workspace "lixo" e arquivos temporários
+users.json
+Novo Documento de Texto.html
+filePathFixed.js
+seed-highlights.js
+src/hooks/*_backup.js
+src/hooks/*_fixed.js
+src/hooks/*_old*.js
+*_work.js
+*_copy.js

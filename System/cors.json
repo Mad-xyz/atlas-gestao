@@ -1,0 +1,14 @@
+[
+  {
+    "origin": [
+      "https://atlas-os-21356.web.app",
+      "https://atlas-os-21356.firebaseapp.com",
+      "https://academia-rstopteam.web.app",
+      "https://academia-rstopteam.firebaseapp.com",
+      "http://localhost:5173"
+    ],
+    "method": ["GET", "OPTIONS"],
+    "responseHeader": ["Content-Type", "Authorization", "x-goog-meta-token"],
+    "maxAgeSeconds": 3600
+  }
+]

@@ -1,0 +1,338 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ATLAS — MULTI-TENANT SaaS (PRODUÇÃO)
+    // ══════════════════════════════════════════════════════════════════════════
+    // Modelo de dados (isolamento TOTAL por academia):
+    //
+    //   organizations/{orgId}
+    //     ├── members/{uid}            → equipe: owner, admin, gestor, professor
+    //     ├── usuarios/{uid}           → todos (alunos + perfis) da academia
+    //     │     ├── anotacoes/{id}
+    //     │     ├── graduacoes/{id}
+    //     │     └── privado/segredos   → PINs (somente staff/dono)
+    //     ├── modalidades/{id}/turmas/{tId}
+    //     ├── chamadas/{id}/presencas/{pId}
+    //     ├── presencas/{id}
+    //     ├── eventos/{id}/visualizacoes/{vId}
+    //     ├── faturas/{id}
+    //     ├── pagamentos/{id}
+    //     ├── despesas/{id}
+    //     ├── contratos/{id}
+    //     ├── turmas/{id}
+    //     ├── logs/{id}
+    //     └── configuracoes/{id}
+    //
+    // Princípios:
+    //   1. Todo dado de negócio vive DENTRO de organizations/{orgId}.
+    //   2. Nenhum usuário acessa dados de organização de que não é membro.
+    //   3. O acesso exige: autenticado + membro + usuário ativo + organização ativa.
+    //   4. Consultas amplas (listar todos os usuários/presenças/faturas do sistema)
+    //      são proibidas.
+    //   5. Coleções raiz legadas (usuarios, alunos, chamadas, faturamento, etc.)
+    //      são BLOQUEADAS — somente admin global (isAdmin()).
+    // ══════════════════════════════════════════════════════════════════════════
+
+    // ── FUNÇÕES REUTILIZÁVEIS ─────────────────────────────────────────────────
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Admin global da plataforma (whitelist de e-mails / claim admin)
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.admin == true ||
+        request.auth.token.email.lower() in [
+          'pmadsonm@gmail.com',
+          'pmadsonm_gmail_com@atlas.internal',
+          'pmadsonm_gmail_com@rstopteam.internal'
+        ]
+      );
+    }
+
+    // Organização existe e está ativa
+    function isOrganizationActive(orgId) {
+      return isAuthenticated()
+        && get(/databases/$(database)/documents/organizations/$(orgId)).data.status == 'ativo';
+    }
+
+    // O usuário autenticado pertence à organização:
+    //   - como staff (documento em members/{uid}) OU
+    //   - como aluno/pessoa da academia (documento em usuarios/{uid})
+    // E o usuário está ativo E a organização está ativa.
+    function isOrganizationMember(orgId) {
+      return isAuthenticated()
+        && isOrganizationActive(orgId)
+        && (
+             exists(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid))
+          || exists(/databases/$(database)/documents/organizations/$(orgId)/usuarios/$(request.auth.uid))
+        )
+        && ehUsuarioAtivoNaOrganizacao(orgId);
+    }
+
+    // Usuário ativo dentro da organização (members ou usuarios)
+    function ehUsuarioAtivoNaOrganizacao(orgId) {
+      let memberAtivo = exists(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid))
+        && get(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid)).data.status != 'inativo';
+      let usuarioAtivo = exists(/databases/$(database)/documents/organizations/$(orgId)/usuarios/$(request.auth.uid))
+        && get(/databases/$(database)/documents/organizations/$(orgId)/usuarios/$(request.auth.uid)).data.status != 'inativo';
+      return memberAtivo || usuarioAtivo;
+    }
+
+    // Papel do usuário dentro da organização (lê de members/{uid})
+    function obterRoleNaOrganizacao(orgId) {
+      return get(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid)).data.role;
+    }
+
+    // Staff = owner | admin | gestor | professor
+    function isOrganizationStaff(orgId) {
+      return isOrganizationMember(orgId)
+        && exists(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid))
+        && obterRoleNaOrganizacao(orgId) in ['owner', 'admin', 'gestor', 'professor'];
+    }
+
+    // Admin da organização = owner | admin
+    function isOrganizationAdmin(orgId) {
+      return isOrganizationStaff(orgId)
+        && obterRoleNaOrganizacao(orgId) in ['owner', 'admin'];
+    }
+
+    // Owner da organização
+    function isOrganizationOwner(orgId) {
+      return isOrganizationStaff(orgId)
+        && obterRoleNaOrganizacao(orgId) == 'owner';
+    }
+
+    // O documento representa o próprio usuário autenticado
+    function ehProprioUsuario(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // O documento financeiro/de presença pertence ao usuário autenticado
+    function ehDonoDoRegistro() {
+      return isAuthenticated()
+        && resource.data.studentId == request.auth.uid;
+    }
+
+    // ── ORGANIZAÇÕES (TENANTS) ────────────────────────────────────────────────
+
+    match /organizations/{orgId} {
+      // Criar organização: qualquer usuário autenticado (vira owner pelo members)
+      allow create: if isAuthenticated();
+      // Ler organização: somente membro da organização, o próprio owner (bootstrap) ou admin global
+      allow get: if isAdmin() || isOrganizationMember(orgId)
+        || (isAuthenticated() && resource.data.ownerUid == request.auth.uid);
+      allow list: if isAuthenticated() && request.query.limit <= 100; // exige filtro/paginação
+      // Atualizar/excluir: somente owner (ou admin global)
+      allow update, delete: if isAdmin() || isOrganizationOwner(orgId);
+
+      // ── MEMBERS (equipe / staff) ────────────────────────────────────────────
+      match /members/{memberId} {
+        allow get: if isOrganizationMember(orgId);
+        allow list: if isOrganizationMember(orgId);
+        allow create: if isAdmin()
+          || isOrganizationAdmin(orgId)
+          // Staff (gestor/professor) cadastram pessoas — mas nunca elevam a owner/admin
+          || (isOrganizationStaff(orgId) && !(request.resource.data.role in ['owner', 'admin']))
+          // Bootstrap: o fundador cria o próprio documento de owner
+          || (memberId == request.auth.uid
+              && request.resource.data.role == 'owner'
+              && get(/databases/$(database)/documents/organizations/$(orgId)).data.ownerUid == request.auth.uid);
+        allow update, delete: if isAdmin() || isOrganizationAdmin(orgId);
+      }
+
+      // ── USUÁRIOS (alunos + perfis da academia) ──────────────────────────────
+      match /usuarios/{userId} {
+        allow get: if isOrganizationStaff(orgId)
+          || ehProprioUsuario(userId)
+          // O próprio usuário pode ler o próprio perfil (o doc é chaveado por e-mail)
+          || (isAuthenticated() && request.auth.token.email == resource.data.email);
+        allow list: if isOrganizationStaff(orgId); // alunos NÃO listam todos
+        allow create: if isOrganizationStaff(orgId);
+        allow update: if isOrganizationStaff(orgId)
+          || (ehProprioUsuario(userId)
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                'nome', 'telefone', 'ddd', 'avatarUrl', 'bannerUrl',
+                'email', 'emergency', 'medical', 'parentName', 'parentPhone'
+              ]));
+        allow delete: if isOrganizationAdmin(orgId);
+
+        // Anotações internas do usuário
+        match /anotacoes/{id} {
+          allow read: if isOrganizationStaff(orgId) || ehProprioUsuario(userId);
+          allow write: if isOrganizationStaff(orgId);
+        }
+        // Graduações / jornada técnica
+        match /graduacoes/{id} {
+          allow read: if isOrganizationMember(orgId) && (isOrganizationStaff(orgId) || ehProprioUsuario(userId));
+          allow write: if isOrganizationStaff(orgId);
+        }
+        // PINs e segredos — acesso restrito (staff ou dono)
+        match /privado/segredos {
+          allow read: if isOrganizationStaff(orgId) || ehProprioUsuario(userId);
+          allow write: if isOrganizationStaff(orgId)
+            || (ehProprioUsuario(userId)
+                && request.resource.data.get('pin', '').matches('[0-9]{6}'));
+        }
+      }
+
+      // ── MODALIDADES ─────────────────────────────────────────────────────────
+      match /modalidades/{id} {
+        allow read: if isOrganizationMember(orgId);
+        allow write: if isOrganizationStaff(orgId);
+
+        match /turmas/{tId} {
+          allow read: if isOrganizationMember(orgId);
+          allow write: if isOrganizationStaff(orgId);
+        }
+      }
+
+      // ── CHAMADAS (sessões / aulas) ──────────────────────────────────────────
+      match /chamadas/{id} {
+        allow read: if isOrganizationMember(orgId);
+        allow write: if isOrganizationStaff(orgId);
+
+        match /presencas/{pId} {
+          allow read: if isOrganizationMember(orgId) || ehDonoDoRegistro();
+          allow write: if isOrganizationStaff(orgId);
+        }
+      }
+
+      // ── PRESENÇAS (histórico agregado) ──────────────────────────────────────
+      match /presencas/{id} {
+        allow read: if isOrganizationMember(orgId) || ehDonoDoRegistro();
+        allow write: if isOrganizationStaff(orgId);
+      }
+
+      // ── EVENTOS / AVISOS ────────────────────────────────────────────────────
+      match /eventos/{id} {
+        allow read: if isOrganizationMember(orgId);
+        allow create, delete: if isOrganizationStaff(orgId);
+        allow update: if isOrganizationStaff(orgId)
+          || (isOrganizationMember(orgId)
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views']));
+
+        match /visualizacoes/{vId} {
+          allow read: if isOrganizationMember(orgId);
+          allow write: if isOrganizationMember(orgId) && vId == request.auth.uid;
+        }
+      }
+
+      // ── FATURAS (cobranças / recebíveis) ────────────────────────────────────
+      match /faturas/{id} {
+        allow read: if isOrganizationStaff(orgId) || ehDonoDoRegistro();
+        allow write: if isOrganizationStaff(orgId);
+      }
+
+      // ── PAGAMENTOS (recebimentos) ───────────────────────────────────────────
+      match /pagamentos/{id} {
+        allow read: if isOrganizationStaff(orgId) || ehDonoDoRegistro();
+        allow write: if isOrganizationStaff(orgId);
+      }
+
+      // ── DESPESAS ────────────────────────────────────────────────────────────
+      match /despesas/{id} {
+        allow read, write: if isOrganizationStaff(orgId);
+      }
+
+      // ── CONTRATOS ───────────────────────────────────────────────────────────
+      match /contratos/{id} {
+        allow read: if isOrganizationStaff(orgId) || ehDonoDoRegistro();
+        allow write: if isOrganizationStaff(orgId);
+      }
+
+      // ── TURMAS (visão agregada) ─────────────────────────────────────────────
+      match /turmas/{id} {
+        allow read: if isOrganizationMember(orgId);
+        allow write: if isOrganizationStaff(orgId);
+      }
+
+      // ── LOGS (trilha de auditoria) ──────────────────────────────────────────
+      match /logs/{id} {
+        allow read: if isOrganizationStaff(orgId);
+        allow create: if isOrganizationMember(orgId);
+        allow update: if isOrganizationStaff(orgId);
+        allow delete: if isOrganizationAdmin(orgId);
+      }
+
+      // ── CONFIGURAÇÕES DA ACADEMIA ───────────────────────────────────────────
+      match /configuracoes/{id} {
+        allow read: if isOrganizationMember(orgId);
+        allow write: if isOrganizationAdmin(orgId);
+      }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // COLLECTION GROUPS (Consultas Multi-Coleção)
+    // Regra geral: permitido apenas para dados do PRÓPRIO usuário ou de
+    // organizações das quais o usuário é membro — identificadas pelo campo
+    // `organizationId` presente em cada documento.
+    // ══════════════════════════════════════════════════════════════════════════
+
+    match /{path=**}/turmas/{tId} {
+      allow read: if isAuthenticated() && isOrganizationMember(resource.data.organizationId);
+    }
+
+    match /{path=**}/presencas/{pId} {
+      allow read: if isAuthenticated()
+        && (resource.data.studentId == request.auth.uid
+            || isOrganizationMember(resource.data.organizationId));
+    }
+
+    match /{path=**}/members/{memberId} {
+      allow read: if isAuthenticated()
+        && (resource.data.userId == request.auth.uid
+            || isOrganizationMember(resource.data.organizationId));
+    }
+
+    match /{path=**}/visualizacoes/{vId} {
+      allow read, write: if isAuthenticated()
+        && isOrganizationMember(resource.data.organizationId);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // COLEÇÕES LEGADAS (RAIZ) — BLOQUEADAS
+    // Acesso somente admin global. Nenhuma regra de negócio lê estas coleções.
+    // ══════════════════════════════════════════════════════════════════════════
+
+    match /usuarios/{id} {
+      allow read, write: if isAdmin();
+      match /privado/{sub} { allow read, write: if isAdmin(); }
+      match /anotacoes/{sub} { allow read, write: if isAdmin(); }
+      match /graduacoes/{sub} { allow read, write: if isAdmin(); }
+      match /visitantes/{sub} { allow read, write: if isAdmin(); }
+    }
+
+    match /users/{id} { allow read, write: if isAdmin(); }
+    match /alunos/{id} { allow read, write: if isAdmin(); }
+    match /students/{id} { allow read, write: if isAdmin(); }
+    match /memberships/{id} { allow read, write: if isAdmin(); }
+
+    match /modalidades/{id} {
+      allow read, write: if isAdmin();
+      match /turmas/{tId} { allow read, write: if isAdmin(); }
+    }
+    match /chamadas/{id} {
+      allow read, write: if isAdmin();
+      match /presencas/{pId} { allow read, write: if isAdmin(); }
+    }
+    match /presencas_log/{id} { allow read, write: if isAdmin(); }
+    match /eventos/{id} { allow read, write: if isAdmin(); }
+    match /faturamento/{id} { allow read, write: if isAdmin(); }
+    match /despesas/{id} { allow read, write: if isAdmin(); }
+    match /contratos/{id} { allow read, write: if isAdmin(); }
+    match /planos/{id} { allow read, write: if isAdmin(); }
+    match /visitantes/{id} { allow read, write: if isAdmin(); }
+    match /cofre_pins/{id} { allow read, write: if isAdmin(); }
+    match /configuracoes_jornada/{id} { allow read, write: if isAdmin(); }
+    match /logs_sistema/{id} { allow read, write: if isAdmin(); }
+    match /equipe/{id} { allow read, write: if isAdmin(); }
+    match /professores/{id} { allow read, write: if isAdmin(); }
+    match /teachers/{id} { allow read, write: if isAdmin(); }
+    match /contracts/{id} { allow read, write: if isAdmin(); }
+    match /plans/{id} { allow read, write: if isAdmin(); }
+  }
+}
