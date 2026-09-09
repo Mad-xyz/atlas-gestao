@@ -19,7 +19,7 @@ export default function ProtectedRoute({ children, allowedRoles, requiredPermiss
   }
 
   // Verifica permissão específica (RBAC)
-  const isActuallyAdmin = userData?.role === 'admin' || userData?.roles?.admin || effectiveRole === 'admin'
+  const isActuallyAdmin = userData?.role === 'admin' || userData?.roles?.admin || effectiveRole === 'admin' || effectiveRole === 'superAdmin'
   if (requiredPermission && !isActuallyAdmin && userData?.permissions) {
     if (!userData.permissions[requiredPermission]) {
        console.warn(`🚫 [ProtectedRoute] Acesso negado por falta de permissão '${requiredPermission}' para rota: ${location.pathname}`)

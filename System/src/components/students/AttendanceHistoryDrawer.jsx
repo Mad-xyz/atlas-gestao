@@ -6,7 +6,8 @@ import {
   CalendarDays, ChevronLeft, ChevronRight, Award, Activity,
   Trophy, FileDown, Target, MessageSquare, Plus, X, Star
 } from 'lucide-react'
-import { COLLECTIONS, SUB_COLLECTIONS } from '../../firebase/collections'
+import { COLLECTIONS, SUB_COLLECTIONS, ROOT_COLLECTIONS } from '../../firebase/collections'
+import { useOrganizacao } from '../../context/OrganizacaoContext'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useHideMobileNav } from '../../hooks/useHideMobileNav'
@@ -49,6 +50,7 @@ function CustomBarTooltip({ active, payload, label }) {
 
 // ── Component ────────────────────────────────────────────────
 export default function AttendanceHistoryDrawer({ student, isOpen, onClose }) {
+  const { organizacaoAtualId } = useOrganizacao()
   const [records, setRecords] = useState([])
   const [notes, setNotes] = useState([])
   const [loading, setLoading] = useState(true)
@@ -63,12 +65,12 @@ export default function AttendanceHistoryDrawer({ student, isOpen, onClose }) {
 
   // ── Load data ───────────────────────────────────────────────
   const loadData = useCallback(async () => {
-    if (!student?.id) return
+    if (!student?.id || !organizacaoAtualId) return
     setLoading(true)
     try {
       // All attendance records for this student (using flat log collection to avoid missing indexes)
       const q = query(
-        fsCollection(db, COLLECTIONS.PRESENCAS_LOG),
+        fsCollection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.PRESENCAS),
         where('studentId', '==', student.id)
       )
       const snap = await getDocs(q)
@@ -107,7 +109,7 @@ export default function AttendanceHistoryDrawer({ student, isOpen, onClose }) {
       setRecords(recs)
 
       // Professor notes
-      const notesSnap = await getDocs(fsCollection(db, COLLECTIONS.ALUNOS, student.id, SUB_COLLECTIONS.ANOTACOES))
+      const notesSnap = await getDocs(fsCollection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.USUARIOS, student.id, SUB_COLLECTIONS.ANOTACOES))
       const nts = notesSnap.docs.map(d => ({ id: d.id, ...d.data() }))
         .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
       setNotes(nts)
@@ -116,7 +118,7 @@ export default function AttendanceHistoryDrawer({ student, isOpen, onClose }) {
     } finally {
       setLoading(false)
     }
-  }, [student?.id])
+  }, [student?.id, organizacaoAtualId])
 
   useEffect(() => { if (isOpen) loadData() }, [isOpen, loadData])
 
@@ -252,7 +254,7 @@ export default function AttendanceHistoryDrawer({ student, isOpen, onClose }) {
     if (!noteText.trim()) return
     setSavingNote(true)
     try {
-      const doc = await addDoc(fsCollection(db, COLLECTIONS.ALUNOS, student.id, SUB_COLLECTIONS.ANOTACOES), {
+      const doc = await addDoc(fsCollection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.USUARIOS, student.id, SUB_COLLECTIONS.ANOTACOES), {
         text: noteText.trim(),
         author: 'Professor',
         createdAt: serverTimestamp()

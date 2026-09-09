@@ -1,20 +1,31 @@
 import { useEffect, useState } from 'react'
 import {
-  collection,
+  collectionGroup,
   onSnapshot,
   query,
-  where,
-  orderBy,
-  limit
+  where
 } from 'firebase/firestore'
 import { db } from '../firebase/config'
-import { COLLECTIONS } from '../firebase/collections'
+import { SUB_COLLECTIONS } from '../firebase/collections'
+import { useOrganizacao } from '../context/OrganizacaoContext'
 
+/**
+ * Histórico de presenças agregado por dia da semana.
+ * MULTI-TENANT: consulta a subcoleção `presencas` (collectionGroup) filtrando
+ * pela organização ativa. A agregação é feita no cliente (sem índices compostos).
+ */
 export function useAttendanceHistory(days = 7) {
+  const { organizacaoAtualId } = useOrganizacao()
   const [history, setHistory] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!organizacaoAtualId) {
+      setHistory([])
+      setLoading(false)
+      return
+    }
+
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     
@@ -22,19 +33,22 @@ export function useAttendanceHistory(days = 7) {
     const startDate = new Date(today)
     startDate.setDate(today.getDate() - days)
 
-    const attendanceRef = collection(db, COLLECTIONS.PRESENCAS_LOG)
+    // MULTI-TENANT: collectionGroup 'presencas' filtrado pela organização ativa
     const q = query(
-      attendanceRef,
-      where('date', '>=', startDate),
-      orderBy('date', 'asc')
+      collectionGroup(db, SUB_COLLECTIONS.PRESENCAS),
+      where('organizationId', '==', organizacaoAtualId)
     )
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const logs = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        date: doc.data().date?.toDate() || new Date()
-      }))
+      const logs = snapshot.docs.map(doc => {
+        const data = doc.data()
+        const dateRaw = data.date || data.data
+        return {
+          id: doc.id,
+          ...data,
+          date: dateRaw?.toDate?.() || new Date(dateRaw) || new Date()
+        }
+      }).filter(l => l.date instanceof Date && !isNaN(l.date.getTime()))
 
       // Aggregate by day of week for the chart
       const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab']
@@ -69,7 +83,7 @@ export function useAttendanceHistory(days = 7) {
     })
 
     return () => unsubscribe()
-  }, [days])
+  }, [days, organizacaoAtualId])
 
   return { history, loading }
 }

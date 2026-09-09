@@ -1,18 +1,25 @@
 import { useState, useEffect } from 'react'
 import { db } from '../firebase/config'
 import { 
-  collection, query, where, onSnapshot, 
-  orderBy, addDoc, doc, updateDoc, deleteDoc, 
+  collection, query, onSnapshot, 
+  orderBy, addDoc, doc, updateDoc, 
   serverTimestamp 
 } from 'firebase/firestore'
-import { COLLECTIONS } from '../firebase/collections'
+import { useOrganizacao } from '../context/OrganizacaoContext'
 
 export function useContracts() {
+  const { organizacaoAtualId } = useOrganizacao()
   const [contracts, setContracts] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const contractsRef = collection(db, COLLECTIONS.CONTRATOS)
+    if (!organizacaoAtualId) {
+      setContracts([])
+      setLoading(false)
+      return
+    }
+    // Contratos escopados na organização ativa (subcoleção `contratos`)
+    const contractsRef = collection(db, 'organizations', organizacaoAtualId, 'contratos')
     const q = query(contractsRef, orderBy('createdAt', 'desc'))
 
     const unsubscribe = onSnapshot(q, (snap) => {
@@ -28,19 +35,22 @@ export function useContracts() {
     })
 
     return () => unsubscribe()
-  }, [])
+  }, [organizacaoAtualId])
 
   async function addContract(contractData) {
-    const contractsRef = collection(db, COLLECTIONS.CONTRATOS)
+    if (!organizacaoAtualId) throw new Error('Nenhuma organização ativa')
+    const contractsRef = collection(db, 'organizations', organizacaoAtualId, 'contratos')
     await addDoc(contractsRef, {
       ...contractData,
+      organizationId: organizacaoAtualId,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     })
   }
 
   async function updateContractStatus(contractId, newStatus) {
-    const contractRef = doc(db, COLLECTIONS.CONTRATOS, contractId)
+    if (!organizacaoAtualId) throw new Error('Nenhuma organização ativa')
+    const contractRef = doc(db, 'organizations', organizacaoAtualId, 'contratos', contractId)
     await updateDoc(contractRef, { 
       status: newStatus,
       updatedAt: serverTimestamp()

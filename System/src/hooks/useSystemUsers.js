@@ -1,15 +1,15 @@
 /**
  * Hook para gerenciar o Sistema Unificado de Usuários (Single Source of Truth)
- * Coleção Central: 'users'
+ * MULTI-TENANT: documentos escopados em organizations/{orgId}/usuarios
  * 
  * Este hook implementa o modelo RBAC (Role-Based Access Control), onde um único
  * documento de usuário pode conter múltiplos papéis (roles: { aluno: true, professor: true, etc }).
  */
 import { useState, useEffect, useCallback } from 'react'
 import {
-  collection, onSnapshot, query, orderBy, limit,
+  collection, onSnapshot, query,
   updateDoc, doc, serverTimestamp, setDoc,
-  getDoc, deleteDoc, getDocs, deleteField, where, addDoc,
+  getDoc, deleteDoc, getDocs, deleteField,
   increment, arrayUnion, arrayRemove
 } from 'firebase/firestore'
 import { initializeApp, getApps } from 'firebase/app'
@@ -20,10 +20,11 @@ import {
 } from 'firebase/auth'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, auth, storage, firebaseConfig } from '../firebase/config'
-import { COLLECTIONS, SUB_COLLECTIONS, FIELDS } from '../firebase/collections'
+import { COLLECTIONS, SUB_COLLECTIONS, FIELDS, ROOT_COLLECTIONS } from '../firebase/collections'
 import { sanitizeString } from '../utils/security'
 import { registrarAtividade, extrairDadosAuth } from './usarLogsSistema'
 import { useAuth } from '../context/AuthContext'
+import { useOrganizacao } from '../context/OrganizacaoContext'
 
 // Inicialização Silenciosa de Auth Secundário para Criação de Contas
 const getVerifyAuth = () => {
@@ -37,19 +38,19 @@ const vAuth = getVerifyAuth()
 
 /** Converte e-mail comum para o formato administrativo interno */
 const toInternalEmail = (email) => {
-  if (!email || email.includes('@rstopteam.internal')) return email;
+  if (!email || email.includes('@atlas.internal') || email.includes('@rstopteam.internal')) return email;
   return email.toLowerCase()
     .trim()
     .replace('@', '_')
-    .replace(/\./g, '_') + '@rstopteam.internal';
+    .replace(/\./g, '_') + '@atlas.internal';
 };
-
-// Nome da coleção unificada no Firestore
-const USERS_COLLECTION = COLLECTIONS.USUARIOS
 
 export const getPinAuthEmail = (raw) => {
   const rawId = String(raw || '').toLowerCase().trim()
   if (rawId.includes('@') && !rawId.endsWith('.internal')) return rawId
+  if (rawId.endsWith('@atlas.internal')) {
+    return rawId.split('@')[0].replace(/_/g, '.')
+  }
   if (rawId.endsWith('@rstopteam.internal')) {
     return rawId.split('@')[0].replace(/_/g, '.')
   }
@@ -69,12 +70,13 @@ const CACHE_TTL_MS = 60_000
 let _activeListener = null
 let _listenerSubscribers = 0
 let _subscriberCallbacks = []
+let _listenerOrgId = null
 
 function notifySubscribers(users) {
   _subscriberCallbacks.forEach(cb => cb(users))
 }
 
-function subscribeToUsers(callback) {
+function subscribeToUsers(callback, organizacaoAtualId) {
   _subscriberCallbacks.push(callback)
   _listenerSubscribers++
 
@@ -82,9 +84,22 @@ function subscribeToUsers(callback) {
     callback(_cachedUsers)
   }
 
+  // Reinicia o listener quando a organização ativa muda
+  if (_activeListener && _listenerOrgId !== organizacaoAtualId) {
+    _activeListener()
+    _activeListener = null
+    _cachedUsers = null
+  }
+
   if (!_activeListener) {
+    if (!organizacaoAtualId) {
+      notifySubscribers([])
+      return
+    }
+    _listenerOrgId = organizacaoAtualId
     try {
-      const q = query(collection(db, USERS_COLLECTION))
+      // MULTI-TENANT: escuta somente a subcoleção `usuarios` da organização ativa
+      const q = query(collection(db, 'organizations', organizacaoAtualId, 'usuarios'))
       _activeListener = onSnapshot(q, (snap) => {
         let users = snap.docs.map(d => {
           const data = d.data()
@@ -127,6 +142,7 @@ function subscribeToUsers(callback) {
 }
 
 export function useSystemUsers() {
+  const { organizacaoAtualId } = useOrganizacao()
   const [users, setUsers] = useState(_cachedUsers || [])
   const [loading, setLoading] = useState(!_cachedUsers)
 
@@ -138,17 +154,49 @@ export function useSystemUsers() {
     const unsub = subscribeToUsers((newUsers) => {
       setUsers(newUsers)
       setLoading(false)
-    })
+    }, organizacaoAtualId)
     return unsub
-  }, [])
+  }, [organizacaoAtualId])
+
+  // Referência tenant-scoped para usuários da organização ativa
+  const getUsuarioRef = useCallback((emailId) => {
+    return doc(db, 'organizations', organizacaoAtualId, 'usuarios', emailId)
+  }, [organizacaoAtualId])
+
+  /**
+   * Garante o vínculo (membership) do usuário na organização — fonte de acesso no login.
+   * Idempotente via setDoc(merge). Bloqueado silenciosamente se a regra negar o papel.
+   */
+  const garantirMembership = useCallback(async (userId, email, rolesMap = {}) => {
+    if (!organizacaoAtualId || !userId) return
+    const role = rolesMap.owner ? 'owner'
+      : rolesMap.admin ? 'admin'
+      : rolesMap.gestor ? 'gestor'
+      : rolesMap.professor ? 'professor'
+      : 'aluno'
+    try {
+      await setDoc(doc(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.MEMBROS, userId), {
+        userId,
+        email,
+        nome: '',
+        role,
+        status: 'ativo',
+        organizationId: organizacaoAtualId,
+        criadoEm: serverTimestamp()
+      }, { merge: true })
+    } catch (e) {
+      console.warn('Não foi possível criar membership (possível permissão de papel):', e.code || e.message)
+    }
+  }, [organizacaoAtualId])
 
   function generatePIN() {
     return Math.floor(100000 + Math.random() * 900000).toString()
   }
 
   const updateProfile = useCallback(async (userId, data) => {
+    if (!organizacaoAtualId) throw new Error('Nenhuma organização ativa')
     const emailId = sanitizeId(userId)
-    const userRef = doc(db, USERS_COLLECTION, emailId)
+    const userRef = getUsuarioRef(emailId)
     const payload = { ...data, [FIELDS.ATUALIZADO_EM]: serverTimestamp() }
     
     const secretsPayload = {}
@@ -193,7 +241,7 @@ export function useSystemUsers() {
             if (mIdRaw && tIdRaw) {
               const mId = mIdRaw.toLowerCase();
               const tId = tIdRaw.toLowerCase();
-              const tRef = doc(db, COLLECTIONS.MODALIDADES, mId, SUB_COLLECTIONS.TURMAS, tId);
+              const tRef = doc(db, 'organizations', organizacaoAtualId, 'modalidades', mId, 'turmas', tId);
               syncPromises.push(updateDoc(tRef, {
                 totalAlunos: increment(1),
                 alunos: arrayUnion(studentEmail)
@@ -206,7 +254,7 @@ export function useSystemUsers() {
             if (mIdRaw && tIdRaw) {
               const mId = mIdRaw.toLowerCase();
               const tId = tIdRaw.toLowerCase();
-              const tRef = doc(db, COLLECTIONS.MODALIDADES, mId, SUB_COLLECTIONS.TURMAS, tId);
+              const tRef = doc(db, 'organizations', organizacaoAtualId, 'modalidades', mId, 'turmas', tId);
               syncPromises.push(updateDoc(tRef, {
                 totalAlunos: increment(-1),
                 alunos: arrayRemove(studentEmail)
@@ -226,7 +274,7 @@ export function useSystemUsers() {
     // 🔒 ATUALIZAR PIN NA SUBCOLEÇÃO SEGURA (Hardening 007)
     if (Object.keys(secretsPayload).length > 0) {
       try {
-        const segredosRef = doc(db, USERS_COLLECTION, emailId, 'privado', 'segredos')
+        const segredosRef = doc(db, 'organizations', organizacaoAtualId, 'usuarios', emailId, 'privado', 'segredos')
         await setDoc(segredosRef, { 
           ...secretsPayload,
           updatedAt: serverTimestamp() 
@@ -249,14 +297,15 @@ export function useSystemUsers() {
         alvoNome: usuarioAlvo?.nome || usuarioAlvo?.name || userId
       }
     )
-  }, [users, dadosLog])
+  }, [users, dadosLog, organizacaoAtualId, getUsuarioRef, garantirMembership])
 
   const createNewUser = useCallback(async (userData) => {
+    if (!organizacaoAtualId) throw new Error('Nenhuma organização ativa')
     const email = (userData.email || '').toLowerCase().trim()
     if (!email) throw new Error("E-mail é obrigatório.")
 
     const emailId = sanitizeId(email)
-    const userRef = doc(db, USERS_COLLECTION, emailId)
+    const userRef = doc(db, 'organizations', organizacaoAtualId, 'usuarios', emailId)
     const existingSnap = await getDoc(userRef)
 
     // Normalização de papéis (Roles)
@@ -279,10 +328,10 @@ export function useSystemUsers() {
       [FIELDS.STATUS]: userData.status || 'Ativo',
       [FIELDS.ATUALIZADO_EM]: serverTimestamp(),
       // 🛡️ Sincronização de Permissões (Compatibilidade com Regras e Schema)
-      // 🛡️ Sincronização de Permissões (Compatibilidade com Regras e Schema)
       [FIELDS.PERMISSOES]: userData.permissions || {},
       'permissões': userData.permissions || {},
-      startDate: userData.startDate || null
+      startDate: userData.startDate || null,
+      organizationId: organizacaoAtualId
     }
 
     // Se uma startDate for fornecida, converte para Timestamp, senão deixa vazio/null
@@ -345,7 +394,7 @@ export function useSystemUsers() {
             if (mIdRaw && tIdRaw) {
               const mId = mIdRaw.toLowerCase();
               const tId = tIdRaw.toLowerCase();
-              syncPromises.push(updateDoc(doc(db, COLLECTIONS.MODALIDADES, mId, SUB_COLLECTIONS.TURMAS, tId), {
+              syncPromises.push(updateDoc(doc(db, 'organizations', organizacaoAtualId, 'modalidades', mId, 'turmas', tId), {
                 totalAlunos: increment(1),
                 alunos: arrayUnion(studentEmail)
               }))
@@ -356,7 +405,7 @@ export function useSystemUsers() {
             if (mIdRaw && tIdRaw) {
               const mId = mIdRaw.toLowerCase();
               const tId = tIdRaw.toLowerCase();
-              syncPromises.push(updateDoc(doc(db, COLLECTIONS.MODALIDADES, mId, SUB_COLLECTIONS.TURMAS, tId), {
+              syncPromises.push(updateDoc(doc(db, 'organizations', organizacaoAtualId, 'modalidades', mId, 'turmas', tId), {
                 totalAlunos: increment(-1),
                 alunos: arrayRemove(studentEmail)
               }))
@@ -370,7 +419,7 @@ export function useSystemUsers() {
 
       // 🔒 SALVAR PIN NA SUBCOLEÇÃO SEGURA (Hardening 007)
       try {
-        const segredosRef = doc(db, USERS_COLLECTION, emailId, 'privado', 'segredos');
+        const segredosRef = doc(db, 'organizations', organizacaoAtualId, 'usuarios', emailId, 'privado', 'segredos');
         await setDoc(segredosRef, { 
           pin: finalPin,
           ...(finalAdminPin ? { adminPin: finalAdminPin } : {}),
@@ -389,12 +438,18 @@ export function useSystemUsers() {
 
           try {
             // Tenta criar conta nova (funciona se ainda não existir Auth)
-            await createUserWithEmailAndPassword(vAuth, pinAuthEmail, securePIN)
+            const contaAuth = await createUserWithEmailAndPassword(vAuth, pinAuthEmail, securePIN)
+            if (contaAuth?.user?.uid) {
+              await garantirMembership(contaAuth.user.uid, email, rolesMap)
+            }
           } catch (createErr) {
             if (createErr.code === 'auth/email-already-in-use') {
               // Auth já existe — tenta fazer login com o PIN novo
               try {
-                await signInWithEmailAndPassword(vAuth, pinAuthEmail, securePIN)
+                const contaAuth = await signInWithEmailAndPassword(vAuth, pinAuthEmail, securePIN)
+                if (contaAuth?.user?.uid) {
+                  await garantirMembership(contaAuth.user.uid, email, rolesMap)
+                }
                 // Login OK — senha já está atualizada, não precisa fazer nada
                 await signOut(vAuth)
               } catch {
@@ -404,6 +459,7 @@ export function useSystemUsers() {
                   if (oldPinValue && oldPinValue !== finalPin) {
                     const oldSecure = oldPinValue.length >= 6 ? oldPinValue : oldPinValue.padEnd(6, '0')
                     const cred = await signInWithEmailAndPassword(vAuth, pinAuthEmail, oldSecure)
+                    await garantirMembership(cred.user.uid, email, rolesMap)
                     await updatePassword(cred.user, securePIN)
                     await signOut(vAuth)
                   }
@@ -418,7 +474,7 @@ export function useSystemUsers() {
         }
       }
 
-      // 6. 👑 Garante Auth de ADMIN (@rstopteam.internal)
+      // 6. 👑 Garante Auth de ADMIN (@atlas.internal)
       if (isAdmin && finalAdminPin) {
         try {
           const vAuth = getVerifyAuth()
@@ -469,7 +525,7 @@ export function useSystemUsers() {
 
       // 🔒 SALVAR PIN NA SUBCOLEÇÃO SEGURA (Hardening 007)
       try {
-        const segredosRef = doc(db, USERS_COLLECTION, emailId, 'privado', 'segredos');
+        const segredosRef = doc(db, 'organizations', organizacaoAtualId, 'usuarios', emailId, 'privado', 'segredos');
         await setDoc(segredosRef, { 
           pin: pin,
           ...(adminPin ? { adminPin: adminPin } : {}),
@@ -488,7 +544,7 @@ export function useSystemUsers() {
             if (mIdRaw && tIdRaw) {
               const mId = mIdRaw.toLowerCase();
               const tId = tIdRaw.toLowerCase();
-              await updateDoc(doc(db, COLLECTIONS.MODALIDADES, mId, SUB_COLLECTIONS.TURMAS, tId), {
+              await updateDoc(doc(db, 'organizations', organizacaoAtualId, 'modalidades', mId, 'turmas', tId), {
                 totalAlunos: increment(1),
                 alunos: arrayUnion(studentEmail)
               })
@@ -501,12 +557,26 @@ export function useSystemUsers() {
       try {
         const pinAuthEmail = getPinAuthEmail(emailId)
         const securePIN = pin.length >= 6 ? pin : pin.padEnd(6, '0')
-        await createUserWithEmailAndPassword(vAuth, pinAuthEmail, securePIN)
+
+        let contaAuth
+        try {
+          contaAuth = await createUserWithEmailAndPassword(vAuth, pinAuthEmail, securePIN)
+        } catch (e) {
+          if (e.code === 'auth/email-already-in-use') {
+            contaAuth = await signInWithEmailAndPassword(vAuth, pinAuthEmail, securePIN)
+            await signOut(vAuth)
+          } else {
+            throw e
+          }
+        }
+        if (contaAuth?.user?.uid) {
+          await garantirMembership(contaAuth.user.uid, email, rolesMap)
+        }
       } catch (e) {
         console.warn('Erro ao criar Auth Secundário (PIN):', e.message)
       }
 
-      // 👑 Garante Auth de ADMIN (@rstopteam.internal)
+      // 👑 Garante Auth de ADMIN (@atlas.internal)
       if (isAdmin && adminPin) {
         try {
           const vAuth = getVerifyAuth()
@@ -534,13 +604,13 @@ export function useSystemUsers() {
 
       return { id: emailId, pin, adminPin, isExisting: false }
     }
-  }, [generatePIN, dadosLog])
+  }, [generatePIN, dadosLog, organizacaoAtualId, garantirMembership])
 
   const fetchUserPin = useCallback(async (userId) => {
-    if (!userId) return null
+    if (!userId || !organizacaoAtualId) return null
     try {
-      // 1. Tenta ler do subcollection seguro: usuarios/{userId}/privado/segredos
-      const segredosRef = doc(db, COLLECTIONS.USUARIOS, userId, 'privado', 'segredos')
+      // 1. Tenta ler do subcollection seguro: organizations/{orgId}/usuarios/{userId}/privado/segredos
+      const segredosRef = doc(db, 'organizations', organizacaoAtualId, 'usuarios', userId, 'privado', 'segredos')
       const snap = await getDoc(segredosRef)
       if (snap.exists()) {
         const data = snap.data()
@@ -550,7 +620,7 @@ export function useSystemUsers() {
         console.log('🔐 [fetchUserPin] subcollection NOT FOUND for', userId)
       }
       // 2. Fallback: tenta ler do documento raiz (PIN ainda não migrado)
-      const userRef = doc(db, COLLECTIONS.USUARIOS, userId)
+      const userRef = doc(db, 'organizations', organizacaoAtualId, 'usuarios', userId)
       const userSnap = await getDoc(userRef)
       if (userSnap.exists()) {
         const rootData = userSnap.data()
@@ -563,7 +633,7 @@ export function useSystemUsers() {
       console.warn('⚠️ fetchUserPin error for', userId, e.code || '', e.message)
       return null
     }
-  }, [])
+  }, [organizacaoAtualId])
 
   const uploadAvatar = useCallback(async (userId, file) => {
     const emailId = sanitizeId(userId)
@@ -593,9 +663,10 @@ export function useSystemUsers() {
   }, [updateProfile])
 
   const deleteUser = useCallback(async (userId) => {
+    if (!organizacaoAtualId) throw new Error('Nenhuma organização ativa')
     let nomeUsuario = userId
     try {
-      const userRef = doc(db, USERS_COLLECTION, userId)
+      const userRef = doc(db, 'organizations', organizacaoAtualId, 'usuarios', userId)
       const snap = await getDoc(userRef)
       if (snap.exists()) {
         const userData = snap.data()
@@ -610,7 +681,7 @@ export function useSystemUsers() {
               const mId = mIdRaw.toLowerCase()
               const tId = tIdRaw.toLowerCase()
               try {
-                await updateDoc(doc(db, COLLECTIONS.MODALIDADES, mId, SUB_COLLECTIONS.TURMAS, tId), {
+                await updateDoc(doc(db, 'organizations', organizacaoAtualId, 'modalidades', mId, 'turmas', tId), {
                   totalAlunos: increment(-1),
                   alunos: arrayRemove(studentEmail)
                 })
@@ -649,7 +720,7 @@ export function useSystemUsers() {
       console.error('❌ Erro crítico ao deletar usuário:', e)
       throw e
     }
-  }, [dadosLog])
+  }, [dadosLog, organizacaoAtualId])
 
   return {
     users,

@@ -11,7 +11,6 @@ import {
   orderBy, getDocs, limit, addDoc, doc, 
   updateDoc, deleteDoc, serverTimestamp 
 } from 'firebase/firestore'
-import { COLLECTIONS } from '../firebase/collections'
 import { useAuth } from '../context/AuthContext'
 import { useOrganizacao } from '../context/OrganizacaoContext'
 import { registrarAtividade, extrairDadosAuth } from './usarLogsSistema'
@@ -56,46 +55,33 @@ export function useFinance() {
     setCarregandoCobrancas(true)
     setCarregandoDespesas(true)
 
-    // 1. Escuta cobranças da academia ativa
-    const refCobrancasOrg = collection(db, 'organizations', organizacaoAtualId, 'charges')
+    // 1. Escuta cobranças da academia ativa (subcoleção tenant-scoped `faturas`)
+    const refCobrancasOrg = collection(db, 'organizations', organizacaoAtualId, 'faturas')
     const qCobrancas = effectiveRole === 'aluno'
       ? query(refCobrancasOrg, where('studentId', '==', user.uid))
       : refCobrancasOrg
 
     const unsubCob = onSnapshot(qCobrancas, (snap) => {
-      if (!snap.empty) {
-        const data = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-        setCobrancas(data)
-        setCarregandoCobrancas(false)
-      } else {
-        // Fallback para faturamento global legado
-        const refGlobal = collection(db, COLLECTIONS.FATURAMENTO)
-        onSnapshot(refGlobal, (snapG) => {
-          setCobrancas(snapG.docs.map(d => ({ id: d.id, ...d.data() })))
-          setCarregandoCobrancas(false)
-        }, () => setCarregandoCobrancas(false))
-      }
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      setCobrancas(data)
+      setCarregandoCobrancas(false)
     }, (err) => {
       console.warn('⚠️ Erro ao buscar cobranças da organização:', err)
+      setCobrancas([])
       setCarregandoCobrancas(false)
     })
 
-    // 2. Escuta despesas da academia ativa
+    // 2. Escuta despesas da academia ativa (subcoleção tenant-scoped `despesas`)
     let unsubDesp = () => {}
     if (effectiveRole !== 'aluno' && effectiveRole !== 'professor') {
-      const refDespesasOrg = collection(db, 'organizations', organizacaoAtualId, 'expenses')
+      const refDespesasOrg = collection(db, 'organizations', organizacaoAtualId, 'despesas')
       unsubDesp = onSnapshot(refDespesasOrg, (snap) => {
-        if (!snap.empty) {
-          setDespesas(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-          setCarregandoDespesas(false)
-        } else {
-          const refGlobalDesp = collection(db, COLLECTIONS.DESPESAS)
-          onSnapshot(refGlobalDesp, (snapG) => {
-            setDespesas(snapG.docs.map(d => ({ id: d.id, ...d.data() })))
-            setCarregandoDespesas(false)
-          }, () => setCarregandoDespesas(false))
-        }
-      }, () => setCarregandoDespesas(false))
+        setDespesas(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+        setCarregandoDespesas(false)
+      }, () => {
+        setDespesas([])
+        setCarregandoDespesas(false)
+      })
     } else {
       setDespesas([])
       setCarregandoDespesas(false)
@@ -130,7 +116,7 @@ export function useFinance() {
     if (effectiveRole === 'aluno') {
       throw new Error('Acesso Negado para criar cobranças.')
     }
-    const ref = collection(db, 'organizations', organizacaoAtualId, 'charges')
+    const ref = collection(db, 'organizations', organizacaoAtualId, 'faturas')
     await addDoc(ref, {
       ...dadosCobranca,
       organizationId: organizacaoAtualId,
@@ -140,7 +126,7 @@ export function useFinance() {
   }
 
   async function atualizarStatusCobranca(idCobranca, novoStatus, paidBy = null) {
-    const cobrancaRef = doc(db, 'organizations', organizacaoAtualId, 'charges', idCobranca)
+    const cobrancaRef = doc(db, 'organizations', organizacaoAtualId, 'faturas', idCobranca)
     const payload = { 
       status: novoStatus,
       updatedAt: serverTimestamp()
@@ -153,11 +139,11 @@ export function useFinance() {
   }
 
   async function deletarCobranca(idCobranca) {
-    await deleteDoc(doc(db, 'organizations', organizacaoAtualId, 'charges', idCobranca))
+    await deleteDoc(doc(db, 'organizations', organizacaoAtualId, 'faturas', idCobranca))
   }
 
   async function adicionarDespesa(dadosDespesa) {
-    const ref = collection(db, 'organizations', organizacaoAtualId, 'expenses')
+    const ref = collection(db, 'organizations', organizacaoAtualId, 'despesas')
     await addDoc(ref, {
       ...dadosDespesa,
       organizationId: organizacaoAtualId,
@@ -167,7 +153,7 @@ export function useFinance() {
   }
 
   async function deletarDespesa(idDespesa) {
-    await deleteDoc(doc(db, 'organizations', organizacaoAtualId, 'expenses', idDespesa))
+    await deleteDoc(doc(db, 'organizations', organizacaoAtualId, 'despesas', idDespesa))
   }
 
   return {

@@ -1,4 +1,4 @@
-# RS Top Team — Academy Management System
+    # Atlas Academy — Academy Management System
 
 ## Dev Commands
 - `npm run dev` — start Vite dev server
@@ -8,8 +8,8 @@
 - `npm run deploy` — `npm run build && firebase deploy`
 
 ## Firebase
-- **Project**: `academia-rstopteam` (default in `.firebaserc`)
-- **Hosting**: site `rstopteam`, public dir `dist`, rewrites all paths to `index.html` (SPA)
+- **Project**: `atlas-os-21356` (default in `.firebaserc`)
+- **Hosting**: site `atlas-os-21356`, public dir `dist`, rewrites all paths to `index.html` (SPA)
 - **CSP**: strict Content-Security-Policy header configured in `firebase.json`
 - **No Firestore indexes file** (`firestore.indexes.json`) or security rules file (`firestore.rules`) committed yet — these are safe to create
 
@@ -42,6 +42,6 @@ All collections, fields, and document keys are in **Portuguese**. Defined in `sr
 | `src/context/ThemeContext.jsx` | 6 dark themes, localStorage persistence |
 | `src/index.css` | Tailwind v4 `@theme` extension + global base styles |
 | `vite.config.js` | Vite config: React, Tailwind v4, PWA plugins |
-| `.firebaserc` | Default Firebase project = `academia-rstopteam` |
+| `.firebaserc` | Default Firebase project = `atlas-os-21356` |
 | `firebase.json` | Hosting config with rewrites + CSP headers |
 | `.agents/` | Agent kit tooling (not project instructions) |

@@ -4,13 +4,17 @@ import { beltConfig } from '../../data/beltConfig'
 import { doc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore'
 import { db } from '../../firebase/config'
 import { useHideMobileNav } from '../../hooks/useHideMobileNav'
+import { COLLECTIONS, ROOT_COLLECTIONS } from '../../firebase/collections'
+import { useOrganizacao } from '../../context/OrganizacaoContext'
 
 /**
  * Modal para registro de troca de faixa (Graduação).
  * Atualiza o campo 'belt' principal e adiciona entrada no 'tech_journey.history'.
+ * MULTI-TENANT: aluno em organizations/{orgId}/usuarios.
  */
 export default function GraduationChangeModal({ student, onClose, onFinish }) {
   useHideMobileNav(!!student)
+  const { organizacaoAtualId } = useOrganizacao()
   const [newBelt, setNewBelt] = useState(student?.belt || 'white')
 
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
@@ -18,10 +22,11 @@ export default function GraduationChangeModal({ student, onClose, onFinish }) {
   const [loading, setLoading] = useState(false)
 
   async function handleSave() {
-    if (!student) return
+    if (!student || !organizacaoAtualId) return
     setLoading(true)
     try {
-      const studentRef = doc(db, 'usuarios', student.id)
+      // MULTI-TENANT: aluno na subcoleção `usuarios` da organização ativa
+      const studentRef = doc(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.USUARIOS, student.id)
       const promotionDate = new Date(date)
       
       await updateDoc(studentRef, {

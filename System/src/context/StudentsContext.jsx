@@ -33,11 +33,6 @@ function parseFirestoreDate(value) {
 export function StudentsProvider({ children }) {
   const [students, setStudents] = useState([])
   const [rawOrgStudents, setRawOrgStudents] = useState([])
-  const [rawUsers, setRawUsers] = useState([])
-  const [rawAlunos, setRawAlunos] = useState([])
-  const [rawStudents, setRawStudents] = useState([])
-  const [rawUsersOld, setRawUsersOld] = useState([])
-  const [rawVisitors, setRawVisitors] = useState([])
   const [isLoadingStudents, setIsLoadingStudents] = useState(true)
 
   const { user } = useAuth()
@@ -99,48 +94,41 @@ export function StudentsProvider({ children }) {
       }
     }
 
-    // 1. Escuta a subcoleção de alunos da organização ativa
+    // ══════════════════════════════════════════════════════════════════════
+    // MULTI-TENANT: escuta SOMENTE a subcoleção `usuarios` da organização ativa.
+    // Coleções globais (usuarios, alunos, students, users, visitantes) foram
+    // BLOQUEADAS nas Security Rules — nenhum fallback é permitido.
+    // ══════════════════════════════════════════════════════════════════════
     let unsubOrg = () => {}
     if (organizacaoAtualId) {
-      const refOrgAlunos = collection(db, 'organizations', organizacaoAtualId, 'students')
+      const refOrgAlunos = collection(db, 'organizations', organizacaoAtualId, 'usuarios')
       unsubOrg = onSnapshot(refOrgAlunos, snap => {
-        setRawOrgStudents(snap.docs.map(d => mapDoc(d, 'students_org')))
-      }, err => console.warn('⚠️ Alunos da organização indisponíveis:', err))
+        setRawOrgStudents(snap.docs.map(d => mapDoc(d, 'usuarios')))
+        setIsLoadingStudents(false)
+      }, err => {
+        console.warn('⚠️ Alunos da organização indisponíveis:', err)
+        setIsLoadingStudents(false)
+      })
+    } else {
+      setRawOrgStudents([])
+      setIsLoadingStudents(false)
     }
-
-    // 2. Escuta coleções globais para fallback inicial da RS Top Team
-    const refs = {
-      usuarios: collection(db, 'usuarios'),
-      alunos: collection(db, 'alunos'),
-      students: collection(db, 'students'),
-      users: collection(db, 'users'),
-      visitantes: collection(db, 'visitantes')
-    }
-
-    const unsub1 = onSnapshot(refs.usuarios, snap => setRawUsers(snap.docs.map(d => mapDoc(d, 'usuarios'))), () => {})
-    const unsub2 = onSnapshot(refs.alunos, snap => setRawAlunos(snap.docs.map(d => mapDoc(d, 'alunos'))), () => {})
-    const unsub3 = onSnapshot(refs.students, snap => setRawStudents(snap.docs.map(d => mapDoc(d, 'students'))), () => {})
-    const unsub4 = onSnapshot(refs.users, snap => setRawUsersOld(snap.docs.map(d => mapDoc(d, 'users'))), () => {})
-    const unsub5 = onSnapshot(refs.visitantes, snap => setRawVisitors(snap.docs.map(d => mapDoc(d, 'visitantes', true))), () => {})
 
     return () => {
-      unsubOrg(); unsub1(); unsub2(); unsub3(); unsub4(); unsub5();
+      unsubOrg()
     }
   }, [user, organizacaoAtualId])
 
   useEffect(() => {
-    const combined = [...rawOrgStudents, ...rawUsers, ...rawAlunos, ...rawStudents, ...rawUsersOld, ...rawVisitors]
     const uniqueMap = new Map()
-    combined.forEach(s => {
+    rawOrgStudents.forEach(s => {
       if (s.id && !uniqueMap.has(s.id)) uniqueMap.set(s.id, s)
     })
 
-    const finalData = Array.from(uniqueMap.values())
-    const sorted = finalData.sort((a, b) => (a.name || '').localeCompare(b.name || ''))
-
+    const sorted = Array.from(uniqueMap.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''))
     setStudents(sorted)
     setIsLoadingStudents(false)
-  }, [rawOrgStudents, rawUsers, rawAlunos, rawStudents, rawUsersOld, rawVisitors])
+  }, [rawOrgStudents])
 
   return (
     <StudentsContext.Provider value={{ students, isLoadingStudents }}>

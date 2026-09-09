@@ -13,9 +13,9 @@ import {
   increment,
 } from 'firebase/firestore'
 import { db } from '../firebase/config'
-import { COLLECTIONS, SUB_COLLECTIONS } from '../firebase/collections'
 import { sanitizeHTML } from '../utils/security'
 import { registrarAtividade } from './usarLogsSistema'
+import { useOrganizacao } from '../context/OrganizacaoContext'
 
 const LS_KEY = 'academy_notice_views'
 
@@ -36,11 +36,12 @@ function saveViewsToLS(userId, set) {
 }
 
 /**
- * Hook para gerenciar Avisos e Eventos.
+ * Hook para gerenciar Avisos e Eventos (tenant-scoped).
  * userViews é mantido em localStorage para evitar flicker causado por
  * erros de permissão no collectionGroup do Firestore.
  */
 export function useNotices(userId = null) {
+  const { organizacaoAtualId } = useOrganizacao()
   const [notices, setNotices] = useState([])
   const [userViews, setUserViews] = useState(() =>
     userId ? loadViewsFromLS(userId) : new Set()
@@ -55,7 +56,12 @@ export function useNotices(userId = null) {
 
   // ── Listener de Avisos + notificação ao postar novo ──
   useEffect(() => {
-    const q = query(collection(db, COLLECTIONS.EVENTOS))
+    if (!organizacaoAtualId) {
+      setNotices([])
+      setLoading(false)
+      return
+    }
+    const q = query(collection(db, 'organizations', organizacaoAtualId, 'eventos'))
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(docSnap => {
@@ -93,7 +99,7 @@ export function useNotices(userId = null) {
     })
 
     return () => unsubscribe()
-  }, [])
+  }, [organizacaoAtualId])
 
   // Solicitar permissão de notificação uma vez
   useEffect(() => {
@@ -111,15 +117,17 @@ export function useNotices(userId = null) {
 
   // ── Adicionar ──
   async function addNotice(noticeData, usuario) {
+    if (!organizacaoAtualId) throw new Error('Nenhuma organização ativa')
     const tipo = getTipoPost(noticeData)
     const payload = {
       ...noticeData,
       description: sanitizeHTML(noticeData.description || ''),
+      organizationId: organizacaoAtualId,
       views: 0,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     }
-    const docRef = await addDoc(collection(db, COLLECTIONS.EVENTOS), payload)
+    const docRef = await addDoc(collection(db, 'organizations', organizacaoAtualId, 'eventos'), payload)
 
     // Log da atividade
     if (usuario) {
@@ -145,11 +153,12 @@ export function useNotices(userId = null) {
 
   // ── Atualizar ──
   async function updateNotice(id, updates, usuario) {
+    if (!organizacaoAtualId) throw new Error('Nenhuma organização ativa')
     const cleanUpdates = { ...updates }
     if (cleanUpdates.description) {
       cleanUpdates.description = sanitizeHTML(cleanUpdates.description)
     }
-    await updateDoc(doc(db, COLLECTIONS.EVENTOS, id), {
+    await updateDoc(doc(db, 'organizations', organizacaoAtualId, 'eventos', id), {
       ...cleanUpdates,
       updatedAt: serverTimestamp(),
     })
@@ -175,11 +184,12 @@ export function useNotices(userId = null) {
 
   // ── Deletar ──
   async function deleteNotice(id, usuario) {
+    if (!organizacaoAtualId) throw new Error('Nenhuma organização ativa')
     // Buscar título antes de deletar para o log
-    const docSnap = await getDoc(doc(db, COLLECTIONS.EVENTOS, id))
+    const docSnap = await getDoc(doc(db, 'organizations', organizacaoAtualId, 'eventos', id))
     const titulo = docSnap.exists() ? docSnap.data().title : 'Post deletado'
 
-    await deleteDoc(doc(db, COLLECTIONS.EVENTOS, id))
+    await deleteDoc(doc(db, 'organizations', organizacaoAtualId, 'eventos', id))
 
     // Log da atividade
     if (usuario) {
@@ -203,7 +213,7 @@ export function useNotices(userId = null) {
   // ── Marcar como Visto ──
   // Atualiza localStorage imediatamente (sem flicker) e persiste no Firestore em background
   const markAsViewed = useCallback(async (noticeId, viewerUserId) => {
-    if (!noticeId || !viewerUserId) return
+    if (!noticeId || !viewerUserId || !organizacaoAtualId) return
 
     // 1. Atualiza estado local imediatamente (evita o flicker)
     setUserViews(prev => {
@@ -218,9 +228,11 @@ export function useNotices(userId = null) {
     try {
       const viewRef = doc(
         db,
-        COLLECTIONS.EVENTOS,
+        'organizations',
+        organizacaoAtualId,
+        'eventos',
         noticeId,
-        SUB_COLLECTIONS.VISUALIZACOES,
+        'visualizacoes',
         viewerUserId
       )
       const viewSnap = await getDoc(viewRef)
@@ -229,16 +241,17 @@ export function useNotices(userId = null) {
       await setDoc(viewRef, {
         noticeId,
         userId: viewerUserId,
+        organizationId: organizacaoAtualId,
         viewedAt: serverTimestamp()
       })
 
-      await updateDoc(doc(db, COLLECTIONS.EVENTOS, noticeId), {
+      await updateDoc(doc(db, 'organizations', organizacaoAtualId, 'eventos', noticeId), {
         views: increment(1)
       })
     } catch (err) {
       console.warn('markAsViewed: erro ao persistir no Firestore:', err.message)
     }
-  }, [])
+  }, [organizacaoAtualId])
 
   return {
     notices,

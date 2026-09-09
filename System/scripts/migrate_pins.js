@@ -88,7 +88,7 @@ async function migratePins() {
         const emailBruto = data.email || profileId;
         const emailAuth = emailBruto.includes('@')
           ? emailBruto
-          : `${emailBruto}@rstopteam.internal`;
+          : `${emailBruto}@atlas.internal`;
         const pinSeguro = String(pin || '000000').trim().padEnd(6, '0');
 
         try {

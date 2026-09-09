@@ -436,3 +436,66 @@
     });
   });
 })();
+
+// ── Demo Interativa: navegação entre views ──────────────────
+(function () {
+  const navItems = document.querySelectorAll('.sys-nav-item[data-view]');
+  const views    = document.querySelectorAll('.sys-view');
+  const pageLabel = document.getElementById('sys-page-label');
+  const pageSub   = document.getElementById('sys-page-sub');
+  const urlBar    = document.querySelector('.sys-url');
+
+  const meta = {
+    dashboard: { title: 'DASHBOARD ACADÊMICO', sub: 'GESTÃO DE PERFORMANCE E PRESENÇA', url: 'app.atralas.com.br/dashboard' },
+    students:  { title: 'ALUNOS',              sub: 'CONTROLE DE MATRÍCULAS E PRESENÇA', url: 'app.atralas.com.br/alunos' },
+  };
+
+  navItems.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const view = btn.dataset.view;
+      // atualiza nav
+      navItems.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      // atualiza view
+      views.forEach(v => v.classList.remove('active'));
+      const target = document.getElementById('view-' + view);
+      if (target) target.classList.add('active');
+      // atualiza topbar
+      if (meta[view] && pageLabel && pageSub) {
+        pageLabel.textContent = meta[view].title;
+        pageSub.textContent   = meta[view].sub;
+        if (urlBar) urlBar.textContent = meta[view].url;
+      }
+    });
+  });
+
+  // Itens sem tela na demo → desfoca a janela e abre popup de recursos
+  const sysWindow = document.querySelector('.sys-window');
+  const sysLock   = document.getElementById('sysLock');
+  const fechaLock = () => {
+    if (sysWindow) sysWindow.classList.remove('sys-blurred');
+    if (sysLock) sysLock.hidden = true;
+  };
+  const abreLock = () => {
+    if (sysWindow) sysWindow.classList.add('sys-blurred');
+    if (sysLock) sysLock.hidden = false;
+  };
+  document.querySelectorAll('.sys-nav-item:not([data-view])').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      abreLock();
+    });
+  });
+  if (sysLock) {
+    const cta = document.getElementById('sysLockCta');
+    const fechar = document.getElementById('sysLockClose');
+    if (cta) cta.addEventListener('click', () => {
+      fechaLock();
+      const cadastro = document.getElementById('cadastro');
+      if (cadastro) cadastro.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    if (fechar) fechar.addEventListener('click', fechaLock);
+    // clique fora do card fecha o popup
+    sysLock.addEventListener('click', e => { if (e.target === sysLock) fechaLock(); });
+  }
+})();

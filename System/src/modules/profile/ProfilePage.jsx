@@ -1057,7 +1057,7 @@ function SectionUsuarios({ users, onAddUser, onUpdateUser, onDeleteUser, onSync 
         )}
       </AnimatePresence>
 
-      {/* MODAL DE DETALHES DO COLABORADOR (REF: RS TOP TEAM STUDIO) */}
+      {/* MODAL DE DETALHES DO COLABORADOR (REF: ATLAS ACADEMY STUDIO) */}
       <AnimatePresence>
         {selectedUser && (
           <div
@@ -1849,7 +1849,7 @@ function SectionAcademia({ user, onUpdateProfile }) {
   return (
     <div className="space-y-6">
       <Section title="Informações da Academia">
-        <InlineField label="Nome" value={user?.academyName || user?.name || "RS Top Team"} />
+        <InlineField label="Nome" value={user?.academyName || user?.name || "Atlas Academy"} />
       </Section>
 
       <Section title="Configuração de Visitantes">
@@ -1930,7 +1930,7 @@ function SectionDados({ onSync }) {
         <SettingRow label="Exportar presenças" desc="Histórico completo de presenças" action={<ChipButton label="Exportar CSV" />} />
       </Section>
       <Section title="Infraestrutura Firestore">
-        <SettingRow label="Projeto Firebase" desc="academia-rstopteam" action={<span className="text-xs text-emerald-500 font-semibold">conectado ✓</span>} />
+        <SettingRow label="Projeto Firebase" desc="atlas-os-21356" action={<span className="text-xs text-emerald-500 font-semibold">conectado ✓</span>} />
         <SettingRow label="Status das Coleções" desc="Nova estrutura PT-BR ativa" action={<div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />} />
       </Section>
     </div>
@@ -1941,7 +1941,7 @@ function SectionSobre() {
   return (
     <div className="space-y-4">
       {/* Seção principal com informações do sistema */}
-      <Section title="RS Top Team — Sistema de Gestão">
+      <Section title="Atlas Academy — Sistema de Gestão">
         <div className="divide-y divide-white/5">
           {[
             { label: 'Versão', value: '26.2.0-beta' },

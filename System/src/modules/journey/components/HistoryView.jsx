@@ -140,7 +140,7 @@ export default function HistoryView({ student, onBack }) {
                    <Calendar size={12} /> {new Date(student.createdAt).toLocaleDateString('pt-BR')}
                 </p>
                 <h3 className="text-sm font-black text-white uppercase tracking-tight">Início da Jornada</h3>
-                <p className="text-[11px] text-gray-500 mt-1 uppercase font-bold">Matrícula confirmada na RS TOP TEAM</p>
+                <p className="text-[11px] text-gray-500 mt-1 uppercase font-bold">Matrícula confirmada na Atlas Academy</p>
              </div>
           </div>
         </div>

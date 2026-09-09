@@ -16,11 +16,11 @@ const ANDROID_HOME = 'C:\\Users\\Mad\\AppData\\Local\\Android\\Sdk';
 const BUILD_TOOLS = join(ANDROID_HOME, 'build-tools', '37.0.0');
 const PLATFORM = join(ANDROID_HOME, 'platforms', 'android-36.1');
 const KEYSTORE_PATH = join(TWA_DIR, 'android.keystore');
-const KEYSTORE_PASS = 'rstopteam';
+const KEYSTORE_PASS = 'atlasacademy';
 const KEY_ALIAS = 'android';
-const KEY_PASS = 'rstopteam';
-const APP_NAME = 'Rs Top Team';
-const PACKAGE_NAME = 'com.rstopteam.academy';
+const KEY_PASS = 'atlasacademy';
+const APP_NAME = 'Atlas Academy';
+const PACKAGE_NAME = 'com.atlasacademy.app';
 
 function run(cmd, opts = {}) {
   console.log(`\n> ${cmd}`);
@@ -36,7 +36,7 @@ function run(cmd, opts = {}) {
 // Step 1: Generate keystore
 console.log('=== Step 1: Keystore ===');
 if (!existsSync(KEYSTORE_PATH)) {
-  run(`"${JAVA_HOME}\\bin\\keytool" -genkey -v -keystore "${KEYSTORE_PATH}" -alias ${KEY_ALIAS} -keyalg RSA -keysize 2048 -validity 10000 -storepass ${KEYSTORE_PASS} -keypass ${KEY_PASS} -dname "CN=RsTopTeam, OU=Dev, O=RsTopTeam, L=City, S=State, C=BR"`);
+  run(`"${JAVA_HOME}\\bin\\keytool" -genkey -v -keystore "${KEYSTORE_PATH}" -alias ${KEY_ALIAS} -keyalg RSA -keysize 2048 -validity 10000 -storepass ${KEYSTORE_PASS} -keypass ${KEY_PASS} -dname "CN=AtlasAcademy, OU=Dev, O=AtlasAcademy, L=City, S=State, C=BR"`);
   console.log('  ✓ Keystore created');
 } else {
   console.log('  ✓ Keystore already exists');
@@ -117,7 +117,7 @@ import android.view.WindowManager;
 
 public class MainActivity extends Activity {
     private WebView webView;
-    private static final String URL = "https://rstopteam.web.app";
+    private static final String URL = "https://atlas-os-21356.web.app";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -138,12 +138,12 @@ public class MainActivity extends Activity {
         settings.setAllowContentAccess(false);
         settings.setGeolocationEnabled(true);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        settings.setUserAgentString(settings.getUserAgentString() + " RsTopTeam-Android/1.0");
+        settings.setUserAgentString(settings.getUserAgentString() + " AtlasAcademy-Android/1.0");
         
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                if (url != null && url.startsWith("https://rstopteam.web.app")) {
+                if (url != null && (url.startsWith("https://atlas-os-21356.web.app") || url.startsWith("https://rstopteam.web.app"))) {
                     return false;
                 }
                 Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
@@ -265,10 +265,10 @@ console.log('  ✓ Zipaligned');
 
 // 7f: Sign
 console.log('\n  7f: Sign APK...');
-run(`"${BUILD_TOOLS}\\apksigner.bat" sign --ks "${KEYSTORE_PATH}" --ks-pass "pass:${KEYSTORE_PASS}" --ks-key-alias ${KEY_ALIAS} --key-pass "pass:${KEY_PASS}" --out "${DIST_APK}\\RsTopTeam-1.0.0.apk" "${DIST_APK}\\app-aligned.apk"`);
+run(`"${BUILD_TOOLS}\\apksigner.bat" sign --ks "${KEYSTORE_PATH}" --ks-pass "pass:${KEYSTORE_PASS}" --ks-key-alias ${KEY_ALIAS} --key-pass "pass:${KEY_PASS}" --out "${DIST_APK}\\AtlasAcademy-1.0.0.apk" "${DIST_APK}\\app-aligned.apk"`);
 console.log('  ✓ Signed');
 
 console.log('\n========================================');
 console.log('✅ APK GERADO COM SUCESSO!');
-console.log(`   📁 ${join(DIST_APK, 'RsTopTeam-1.0.0.apk')}`);
+console.log(`   📁 ${join(DIST_APK, 'AtlasAcademy-1.0.0.apk')}`);
 console.log('========================================');

@@ -11,8 +11,9 @@ import {
   collection, query, where, getDocs,
   orderBy, limit
 } from 'firebase/firestore'
-import { COLLECTIONS, SUB_COLLECTIONS } from '../firebase/collections'
+import { SUB_COLLECTIONS } from '../firebase/collections'
 import { useStudents } from './useStudents'
+import { useOrganizacao } from '../context/OrganizacaoContext'
 
 // ── Helpers de data ────────────────────────────────────────────────────────────
 export function parseDate(d) {
@@ -106,6 +107,7 @@ let globalMetaCache = {
 // ── Hook principal ─────────────────────────────────────────────────────────────
 export function useDashboardStats(period = 'Semana', instructorId = null) {
   const { students, isLoading: isLoadingStudents } = useStudents()
+  const { organizacaoAtualId } = useOrganizacao()
 
   const [data, setData] = useState(() => {
     // Chart and period-specific data
@@ -136,6 +138,7 @@ export function useDashboardStats(period = 'Semana', instructorId = null) {
   const fetchData = useCallback(async (forced = false) => {
     if (isLoadingStudents || !students) return
     if (isFetchingRef.current) return
+    if (!organizacaoAtualId) return
 
     const hasCache = !!statsCache.data[period]
     const isStale = !statsCache.ts[period] || (Date.now() - statsCache.ts[period]) > 120000
@@ -153,7 +156,7 @@ export function useDashboardStats(period = 'Semana', instructorId = null) {
         }
         const nowBR = getBrasiliaNow();
         const todayStr = toYMD(nowBR)
-        const sessRef = collection(db, COLLECTIONS.CHAMADAS)
+        const sessRef = collection(db, 'organizations', organizacaoAtualId, 'chamadas')
 
         // ── 1. Presenças de hoje ─────────────────────────────────────────────────
         // Busca somente sessões de hoje (filtro por data = indexed)
@@ -391,7 +394,7 @@ if (!lastAttendance) return false
         isFetchingRef.current = false
       }
     }
-  }, [isLoadingStudents, students, period, instructorId])
+  }, [isLoadingStudents, students, period, instructorId, organizacaoAtualId])
 
   useEffect(() => {
     // Se mudamos o período e temos no cache, atualizamos o 'data' instantaneamente

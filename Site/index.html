@@ -27,6 +27,7 @@
       <ul class="nav-links" id="navLinks">
         <li><a href="#funcionalidades">Recursos</a></li>
         <li><a href="#planos">Planos</a></li>
+        <li><a href="#demo-interativa">Demo ao vivo</a></li>
         <li><a href="#demonstracao">Demonstração</a></li>
         <li><a href="#faq">FAQ</a></li>
       </ul>
@@ -483,10 +484,557 @@
       </div>
     </section>
 
+    <section class="section section-dark demo-interactive" id="demo-interativa">
+      <div class="container">
+
+        <!-- cabeçalho -->
+        <header class="section-head reveal">
+          <p class="eyebrow"><span>06</span>Veja o sistema por dentro</p>
+          <h2>O painel de gestão ao vivo.</h2>
+          <p>Explore o Dashboard e a tela de Alunos exatamente como seu gestor veria. Dados fictícios para demonstração.</p>
+        </header>
+
+        <!-- JANELA DO SISTEMA (browser mockup) -->
+        <div class="sys-window reveal-late">
+
+          <!-- barra de título do browser -->
+          <div class="sys-titlebar">
+            <span class="sys-dot sys-dot-r"></span>
+            <span class="sys-dot sys-dot-y"></span>
+            <span class="sys-dot sys-dot-g"></span>
+            <span class="sys-url">app.atralas.com.br/dashboard</span>
+            <span class="sys-demo-badge">DEMO</span>
+          </div>
+
+          <!-- corpo do app -->
+          <div class="sys-body">
+
+            <!-- ── SIDEBAR ─────────────────────────────────────── -->
+            <aside class="sys-sidebar">
+
+              <!-- Logotipo (réplica Sidebar.jsx) -->
+              <div class="sys-brand">
+                <div class="sys-brand-logo">A</div>
+                <div class="sys-brand-txt">
+                  <span class="sys-brand-atlas">ATLAS</span>
+                  <span class="sys-brand-name">ACADEMY</span>
+                </div>
+              </div>
+
+              <nav class="sys-nav">
+                <p class="sys-nav-label">Visão Geral</p>
+                <button class="sys-nav-item active" data-view="dashboard">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  <span>Dashboard</span>
+                </button>
+
+                <p class="sys-nav-label">Operacional</p>
+                <button class="sys-nav-item" data-view="students">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M8 18a4 4 0 0 1 8 0"/></svg>
+                  <span>Alunos</span>
+                </button>
+
+                <button class="sys-nav-item">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  <span>Equipe &amp; Professores</span>
+                </button>
+
+                <button class="sys-nav-item">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                  <span>Chamada</span>
+                </button>
+
+                <button class="sys-nav-item">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="M4 2c-.5 1.3-1 3.5-1 5"/><path d="M22 2c.5 1.3 1 3.5 1 5"/></svg>
+                  <span>Avisos &amp; Eventos</span>
+                </button>
+
+                <button class="sys-nav-item">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                  <span>Modalidades e Turmas</span>
+                </button>
+
+                <p class="sys-nav-label">Inteligência Financeira</p>
+                <button class="sys-nav-item">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5Z"/><path d="M2 9v1c0 1.1.9 2 2 2h1"/><path d="M16 11h.01"/></svg>
+                  <span>Cobrança</span>
+                </button>
+
+                <button class="sys-nav-item">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="7" y1="7" x2="17" y2="17"/><polyline points="17 7 17 17 7 17"/></svg>
+                  <span>Despesas</span>
+                </button>
+
+                <button class="sys-nav-item">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+                  <span>Relatórios Financeiros</span>
+                </button>
+
+                <p class="sys-nav-label">Sistema</p>
+                <button class="sys-nav-item">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <span>Configurações</span>
+                </button>
+              </nav>
+
+              <!-- rodapé da sidebar (Admin / Recolher) -->
+              <div class="sys-side-foot">
+                <button class="sys-foot-item sys-foot-collapse">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                  <span>Recolher</span>
+                </button>
+              </div>
+            </aside>
+
+            <!-- ── CONTEÚDO PRINCIPAL ──────────────────────────── -->
+            <div class="sys-main">
+
+              <!-- TOPBAR -->
+              <div class="sys-topbar">
+                <div class="sys-page-title">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  <div>
+                    <p class="sys-pt-title" id="sys-page-label">DASHBOARD ACADÊMICO</p>
+                    <p class="sys-pt-sub" id="sys-page-sub">GESTÃO DE PERFORMANCE E PRESENÇA</p>
+                  </div>
+                </div>
+                <div class="sys-user-info">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                  <div class="sys-avatar-wrap">
+                    <span class="sys-username">Madison Vander</span>
+                    <span class="sys-role">Gestor</span>
+                  </div>
+                  <div class="sys-avatar">MV</div>
+                </div>
+              </div>
+
+              <!-- ── VIEW: DASHBOARD ──────────────────────────── -->
+              <div class="sys-view active" id="view-dashboard">
+
+                <!-- KPI grid (13 cards = 10 base + 3 modalidades, como KPIData do ManagerDashboard) -->
+                <div class="sys-kpi-grid">
+                  <!-- 1 · Alunos Ativos -->
+                  <div class="sys-kpi">
+                    <div class="sys-kpi-top">
+                      <span class="sys-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+                      <span class="sys-kpi-label">Alunos Ativos</span>
+                    </div>
+                    <span class="sys-kpi-value">24</span>
+                    <span class="sys-kpi-desc">Total de matriculados</span>
+                  </div>
+                  <!-- 2 · Novos Alunos -->
+                  <div class="sys-kpi">
+                    <div class="sys-kpi-top">
+                      <span class="sys-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg></span>
+                      <span class="sys-kpi-label">Novos Alunos</span>
+                      <span class="sys-chip green">Novo</span>
+                    </div>
+                    <span class="sys-kpi-value sys-green">3</span>
+                    <span class="sys-kpi-desc">Últimos 15 dias</span>
+                  </div>
+                  <!-- 3 · Presença Hoje -->
+                  <div class="sys-kpi">
+                    <div class="sys-kpi-top">
+                      <span class="sys-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg></span>
+                      <span class="sys-kpi-label">Presença Hoje</span>
+                    </div>
+                    <span class="sys-kpi-value sys-blue">12</span>
+                    <span class="sys-kpi-desc">Check-ins registrados</span>
+                  </div>
+                  <!-- 4 · Ausentes +10D -->
+                  <div class="sys-kpi">
+                    <div class="sys-kpi-top">
+                      <span class="sys-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="8" x2="22" y2="13"/><line x1="22" y1="8" x2="17" y2="13"/></svg></span>
+                      <span class="sys-kpi-label">Ausentes +10D</span>
+                      <span class="sys-chip red">2 críticos</span>
+                    </div>
+                    <span class="sys-kpi-value sys-red">4</span>
+                    <span class="sys-kpi-desc">Clique p/ ver lista</span>
+                  </div>
+                  <!-- 5 · Receita do Mês -->
+                  <div class="sys-kpi">
+                    <div class="sys-kpi-top">
+                      <span class="sys-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+                      <span class="sys-kpi-label">Receita do Mês</span>
+                    </div>
+                    <span class="sys-kpi-value sys-green">R$ 4.762</span>
+                    <span class="sys-kpi-desc">Faturamento consolidado</span>
+                  </div>
+                  <!-- 6 · Taxa de Retenção -->
+                  <div class="sys-kpi">
+                    <div class="sys-kpi-top">
+                      <span class="sys-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span>
+                      <span class="sys-kpi-label">Taxa de Retenção</span>
+                    </div>
+                    <span class="sys-kpi-value sys-green">92%</span>
+                    <span class="sys-kpi-desc">2 evasões críticas</span>
+                  </div>
+                  <!-- 7 · Pgtos Atrasados -->
+                  <div class="sys-kpi">
+                    <div class="sys-kpi-top">
+                      <span class="sys-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+                      <span class="sys-kpi-label">Pgtos Atrasados</span>
+                    </div>
+                    <span class="sys-kpi-value sys-red">2</span>
+                    <span class="sys-kpi-desc">Total de boletos vencidos</span>
+                  </div>
+                  <!-- 8 · Pendentes -->
+                  <div class="sys-kpi">
+                    <div class="sys-kpi-top">
+                      <span class="sys-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg></span>
+                      <span class="sys-kpi-label">Pendentes</span>
+                    </div>
+                    <span class="sys-kpi-value sys-red">R$ 1.240</span>
+                    <span class="sys-kpi-desc">Total em pendentes</span>
+                  </div>
+                  <!-- 9 · Professores -->
+                  <div class="sys-kpi">
+                    <div class="sys-kpi-top">
+                      <span class="sys-kpi-ic sys-ic-emerald"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span>
+                      <span class="sys-kpi-label">Professores</span>
+                    </div>
+                    <span class="sys-kpi-value sys-green">3</span>
+                    <span class="sys-kpi-desc">Equipe técnica ativa</span>
+                  </div>
+                  <!-- 10 · Visitantes -->
+                  <div class="sys-kpi">
+                    <div class="sys-kpi-top">
+                      <span class="sys-kpi-ic sys-ic-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+                      <span class="sys-kpi-label">Visitantes</span>
+                    </div>
+                    <span class="sys-kpi-value sys-blue">5</span>
+                    <span class="sys-kpi-desc">Últimos 30 dias</span>
+                  </div>
+                  <!-- 11 · Modalidade: Jiu Jitsu -->
+                  <div class="sys-kpi">
+                    <div class="sys-kpi-top">
+                      <span class="sys-kpi-ic sys-ic-crimson"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+                      <span class="sys-kpi-label">Jiu Jitsu</span>
+                    </div>
+                    <span class="sys-kpi-value" style="color:#DC143C">18</span>
+                    <span class="sys-kpi-desc">Alunos matriculados</span>
+                  </div>
+                  <!-- 12 · Modalidade: Muay Thai -->
+                  <div class="sys-kpi">
+                    <div class="sys-kpi-top">
+                      <span class="sys-kpi-ic sys-ic-emerald"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+                      <span class="sys-kpi-label">Muay Thai</span>
+                    </div>
+                    <span class="sys-kpi-value sys-green">7</span>
+                    <span class="sys-kpi-desc">Alunos matriculados</span>
+                  </div>
+                  <!-- 13 · Modalidade: Boxe -->
+                  <div class="sys-kpi">
+                    <div class="sys-kpi-top">
+                      <span class="sys-kpi-ic sys-ic-yellow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+                      <span class="sys-kpi-label">Boxe</span>
+                    </div>
+                    <span class="sys-kpi-value sys-amber">4</span>
+                    <span class="sys-kpi-desc">Alunos matriculados</span>
+                  </div>
+                </div>
+
+                <!-- ── Aulas de Hoje (card real do ManagerDashboard) ── -->
+                <div class="sys-panel">
+                  <div class="sys-panel-h">
+                    <span class="sys-panel-title">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
+                      Aulas de Hoje
+                    </span>
+                    <span class="sys-panel-link">Ver tudo ›</span>
+                  </div>
+
+                  <div class="sys-session-row" style="--sc:#DC143C">
+                    <div class="sys-session-l">
+                      <p class="sys-session-name">Jiu Jitsu — Fundamentos</p>
+                      <p class="sys-session-time">18:30 – 20:00</p>
+                    </div>
+                    <div class="sys-session-r">
+                      <div>
+                        <div class="sys-session-bar"><i style="--w:88%"></i></div>
+                        <p class="sys-session-pct">88% de presença</p>
+                      </div>
+                      <div class="sys-session-count">
+                        <b>14</b>
+                        <span>/16 alunos</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="sys-session-row" style="--sc:#f59e0b">
+                    <div class="sys-session-l">
+                      <p class="sys-session-name">Muay Thai — Intermediário</p>
+                      <p class="sys-session-time">19:00 – 20:00</p>
+                    </div>
+                    <div class="sys-session-r">
+                      <div>
+                        <div class="sys-session-bar"><i style="--w:75%"></i></div>
+                        <p class="sys-session-pct">75% de presença</p>
+                      </div>
+                      <div class="sys-session-count">
+                        <b>6</b>
+                        <span>/8 alunos</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="sys-session-row" style="--sc:#f59e0b">
+                    <div class="sys-session-l">
+                      <p class="sys-session-name">Boxe — Condicionamento</p>
+                      <p class="sys-session-time">20:00 – 21:00</p>
+                    </div>
+                    <div class="sys-session-r">
+                      <div>
+                        <div class="sys-session-bar"><i style="--w:71%"></i></div>
+                        <p class="sys-session-pct">71% de presença</p>
+                      </div>
+                      <div class="sys-session-count">
+                        <b>5</b>
+                        <span>/7 alunos</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ── Fluxo de Caixa (últimos 6 meses) ── -->
+                <div class="sys-panel">
+                  <div class="sys-panel-h">
+                    <span class="sys-panel-title">Fluxo de Caixa (Últimos 6 Meses)</span>
+                  </div>
+
+                  <div class="sys-cash-row">
+                    <span class="sys-cash-m">ABR 26</span>
+                    <div class="sys-cash-amt"><span class="rev">R$ 4.120</span><span class="exp">R$ 1.050</span></div>
+                    <div class="sys-cash-bars"><span><i style="--w:73%"></i></span><span><i style="--w:18%"></i></span></div>
+                    <span class="sys-cash-bal">R$ 3.070</span>
+                  </div>
+                  <div class="sys-cash-row">
+                    <span class="sys-cash-m">MAI 26</span>
+                    <div class="sys-cash-amt"><span class="rev">R$ 4.890</span><span class="exp">R$ 1.380</span></div>
+                    <div class="sys-cash-bars"><span><i style="--w:86%"></i></span><span><i style="--w:24%"></i></span></div>
+                    <span class="sys-cash-bal">R$ 3.510</span>
+                  </div>
+                  <div class="sys-cash-row">
+                    <span class="sys-cash-m">JUN 26</span>
+                    <div class="sys-cash-amt"><span class="rev">R$ 4.510</span><span class="exp">R$ 1.220</span></div>
+                    <div class="sys-cash-bars"><span><i style="--w:79%"></i></span><span><i style="--w:21%"></i></span></div>
+                    <span class="sys-cash-bal">R$ 3.290</span>
+                  </div>
+                  <div class="sys-cash-row">
+                    <span class="sys-cash-m">JUL 26</span>
+                    <div class="sys-cash-amt"><span class="rev">R$ 5.240</span><span class="exp">R$ 1.470</span></div>
+                    <div class="sys-cash-bars"><span><i style="--w:92%"></i></span><span><i style="--w:26%"></i></span></div>
+                    <span class="sys-cash-bal">R$ 3.770</span>
+                  </div>
+                  <div class="sys-cash-row">
+                    <span class="sys-cash-m">AGO 26</span>
+                    <div class="sys-cash-amt"><span class="rev">R$ 5.680</span><span class="exp">R$ 1.540</span></div>
+                    <div class="sys-cash-bars"><span><i style="--w:100%"></i></span><span><i style="--w:27%"></i></span></div>
+                    <span class="sys-cash-bal">R$ 4.140</span>
+                  </div>
+                  <div class="sys-cash-row">
+                    <span class="sys-cash-m">SET 26</span>
+                    <div class="sys-cash-amt"><span class="rev">R$ 3.210</span><span class="exp">R$ 890</span></div>
+                    <div class="sys-cash-bars"><span><i style="--w:56%"></i></span><span><i style="--w:16%"></i></span></div>
+                    <span class="sys-cash-bal">R$ 2.320</span>
+                  </div>
+                </div>
+
+              </div><!-- /view-dashboard -->
+
+              <!-- ── VIEW: ALUNOS ────────────────────────────── -->
+              <div class="sys-view" id="view-students">
+
+                <!-- busca + ação -->
+                <div class="sys-students-actions">
+                  <div class="sys-search-wrap">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input class="sys-search" type="text" placeholder="Buscar por nome, email, telefone..." readonly />
+                  </div>
+                  <button class="sys-btn-primary sys-btn-add">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span>Novo Aluno</span>
+                  </button>
+                </div>
+
+                <!-- KPIs (idênticos aos StatCards do StudentsPage) -->
+                <div class="sys-kpi-grid sys-kpi-grid-4">
+                  <div class="sys-kpi">
+                    <span class="sys-kpi-label">Ativos</span>
+                    <span class="sys-kpi-value sys-green">24</span>
+                    <span class="sys-kpi-desc">Alunos matriculados</span>
+                  </div>
+                  <div class="sys-kpi">
+                    <span class="sys-kpi-label">Inativos</span>
+                    <span class="sys-kpi-value sys-slate">2</span>
+                    <span class="sys-kpi-desc">Cancelamentos ou travaram</span>
+                  </div>
+                  <div class="sys-kpi">
+                    <span class="sys-kpi-label">Graduados</span>
+                    <span class="sys-kpi-value sys-blue">7</span>
+                    <span class="sys-kpi-desc">Total de alunos com faixa</span>
+                  </div>
+                  <div class="sys-kpi">
+                    <span class="sys-kpi-label">Arquivados</span>
+                    <span class="sys-kpi-value sys-amber">2</span>
+                    <span class="sys-kpi-desc">Inativos, suspensos e arquivados</span>
+                  </div>
+                </div>
+
+                <!-- filtros (selects como no StudentsPage) -->
+                <div class="sys-selects">
+                  <div class="sys-select">
+                    <span class="sys-select-label">Ordenar por</span>
+                    <span class="sys-select-val">Mais Recente
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                    </span>
+                  </div>
+                  <div class="sys-select">
+                    <span class="sys-select-label">Status</span>
+                    <span class="sys-select-val">Todos
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                    </span>
+                  </div>
+                  <div class="sys-select">
+                    <span class="sys-select-label">Tipo</span>
+                    <span class="sys-select-val">Alunos
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                    </span>
+                  </div>
+                  <div class="sys-select">
+                    <span class="sys-select-label">Modalidade</span>
+                    <span class="sys-select-val">Todas
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                    </span>
+                  </div>
+                </div>
+
+                <!-- painel da tabela -->
+                <div class="sys-tbl-panel">
+                  <div class="sys-tbl-glow"></div>
+                  <div class="sys-students-table sys-tbl7">
+                    <div class="sys-table-head">
+                      <span>Aluno</span>
+                      <span class="sys-tc">Telefone</span>
+                      <span class="sys-tc">PIN</span>
+                      <span class="sys-tc">Modalidade</span>
+                      <span class="sys-tc">Pagamento</span>
+                      <span class="sys-tc">Status</span>
+                      <span class="sys-tc">Ações</span>
+                    </div>
+
+                    <div class="sys-table-row">
+                      <div class="sys-student-cell">
+                        <span class="sys-avatar-s" style="background:#3b82f61f;color:#60a5fa">MC</span>
+                        <div>
+                          <b>Marina Costa</b>
+                          <small>Azul · 2 GRAUS</small>
+                        </div>
+                      </div>
+                      <span class="sys-td sys-tc"><span class="sys-phone">(11) 98888-1234</span></span>
+                      <span class="sys-td sys-tc"><span class="sys-pin">4521</span></span>
+                      <span class="sys-td sys-tc"><span class="sys-pill">Jiu Jitsu</span></span>
+                      <span class="sys-td sys-tc"><span class="sys-pay pay-ok">Pago</span></span>
+                      <span class="sys-td sys-tc"><span class="sys-status ok">Ativo</span></span>
+                      <span class="sys-td sys-tc sys-muted-ico">⋯</span>
+                    </div>
+
+                    <div class="sys-table-row">
+                      <div class="sys-student-cell">
+                        <span class="sys-avatar-s" style="background:#94a3b826;color:#cbd5e1">RS</span>
+                        <div>
+                          <b>Rafael Silva</b>
+                          <small>Branca</small>
+                        </div>
+                      </div>
+                      <span class="sys-td sys-tc"><span class="sys-phone">(11) 97777-2345</span></span>
+                      <span class="sys-td sys-tc"><span class="sys-pin">8890</span></span>
+                      <span class="sys-td sys-tc"><span class="sys-pill">Muay Thai</span></span>
+                      <span class="sys-td sys-tc"><span class="sys-pay pay-ok">Pago</span></span>
+                      <span class="sys-td sys-tc"><span class="sys-status ok">Ativo</span></span>
+                      <span class="sys-td sys-tc sys-muted-ico">⋯</span>
+                    </div>
+
+                    <div class="sys-table-row">
+                      <div class="sys-student-cell">
+                        <span class="sys-avatar-s" style="background:#8b5cf626;color:#a78bfa">BL</span>
+                        <div>
+                          <b>Bruno Lima</b>
+                          <small>Roxa · 1 GRAU</small>
+                        </div>
+                      </div>
+                      <span class="sys-td sys-tc"><span class="sys-phone">(11) 96666-3456</span></span>
+                      <span class="sys-td sys-tc"><span class="sys-pin">1123</span></span>
+                      <span class="sys-td sys-tc"><span class="sys-pill">Jiu Jitsu</span></span>
+                      <span class="sys-td sys-tc"><span class="sys-pay pay-warn">Pendente</span></span>
+                      <span class="sys-td sys-tc"><span class="sys-status err">Inativo</span></span>
+                      <span class="sys-td sys-tc sys-muted-ico">⋯</span>
+                    </div>
+
+                    <div class="sys-table-row">
+                      <div class="sys-student-cell">
+                        <span class="sys-avatar-s" style="background:#10b98126;color:#34d399">FA</span>
+                        <div>
+                          <b>Fernanda Alves</b>
+                          <small>Sem faixa</small>
+                        </div>
+                      </div>
+                      <span class="sys-td sys-tc"><span class="sys-phone">(11) 95555-4567</span></span>
+                      <span class="sys-td sys-tc"><span class="sys-pin">7744</span></span>
+                      <span class="sys-td sys-tc"><span class="sys-pill">Boxe</span></span>
+                      <span class="sys-td sys-tc"><span class="sys-pay pay-ok">Pago</span></span>
+                      <span class="sys-td sys-tc"><span class="sys-status ok">Ativo</span></span>
+                      <span class="sys-td sys-tc sys-muted-ico">⋯</span>
+                    </div>
+
+                    <div class="sys-table-row">
+                      <div class="sys-student-cell">
+                        <span class="sys-avatar-s" style="background:#d9770626;color:#f59e0b">JP</span>
+                        <div>
+                          <b>João Pereira</b>
+                          <small>Marrom</small>
+                        </div>
+                      </div>
+                      <span class="sys-td sys-tc"><span class="sys-phone">(11) 94444-5678</span></span>
+                      <span class="sys-td sys-tc"><span class="sys-pin">3300</span></span>
+                      <span class="sys-td sys-tc"><span class="sys-pill">Jiu Jitsu</span></span>
+                      <span class="sys-td sys-tc"><span class="sys-pay pay-warn">Vencido</span></span>
+                      <span class="sys-td sys-tc"><span class="sys-status err">Inativo</span></span>
+                      <span class="sys-td sys-tc sys-muted-ico">⋯</span>
+                    </div>
+                  </div>
+                </div>
+
+              </div><!-- /view-students -->
+
+            </div><!-- /sys-main -->
+          </div><!-- /sys-body -->
+        </div><!-- /sys-window -->
+
+        <!-- Popup: módulos bloqueados na demo -->
+        <div class="sys-lock" id="sysLock" role="dialog" aria-modal="true" aria-label="Recursos bloqueados na demonstração" hidden>
+          <div class="sys-lock-card">
+            <span class="sys-lock-ic">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </span>
+            <p class="sys-lock-eyebrow">Módulos exclusivos</p>
+            <h3>Quer ver mais recursos?</h3>
+            <p class="sys-lock-txt">Esta tela faz parte da gestão completa do Atralas. Teste o sistema de verdade por <b>7 dias grátis</b> e acesse Cobranças, Despesas, Relatórios e todos os outros módulos.</p>
+            <button class="sys-lock-cta" id="sysLockCta" type="button">
+              Quero criar minha academia
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <button class="sys-lock-later" id="sysLockClose" type="button">Agora não</button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
     <section class="section section-demo" id="demonstracao">
       <div class="container demo-grid">
         <div class="demo-copy reveal">
-          <p class="eyebrow"><span>06</span>Sem compromisso · Tire todas as suas dúvidas</p>
+          <p class="eyebrow"><span>07</span>Sem compromisso · Tire todas as suas dúvidas</p>
           <h2>Agende sua demonstração</h2>
           <p>Conte um pouco sobre sua academia. Vamos entender sua operação e mostrar como o Atralas pode ajudar no seu dia a dia.</p>
           <p class="demo-whats">Falar com o time no WhatsApp</p>
@@ -537,7 +1085,7 @@
     <section class="section" id="faq">
       <div class="container narrow">
         <header class="section-head reveal">
-          <p class="eyebrow"><span>07</span>Suporte</p>
+          <p class="eyebrow"><span>08</span>Suporte</p>
           <h2>Dúvidas frequentes</h2>
           <p>Ainda ficou com alguma dúvida? Fale com a equipe e conte como funciona a rotina da sua academia.</p>
         </header>

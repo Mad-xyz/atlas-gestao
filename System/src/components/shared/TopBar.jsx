@@ -18,7 +18,7 @@ export default function TopBar() {
         <Link to="/" className="flex items-center gap-3">
           <img 
             src="/logo.webp" 
-            alt="RS Top Team" 
+            alt="Atlas Academy" 
             className="w-10 h-10 rounded-full object-cover" 
             style={{ 
               boxShadow: '0 0 15px color-mix(in srgb, var(--clr-primary) 45%, transparent)',
@@ -26,8 +26,8 @@ export default function TopBar() {
             }}
           />
           <div>
-            <p className="text-xs text-gray-400 leading-none tracking-widest uppercase">Rs</p>
-            <p className="font-sans text-xl text-white leading-none tracking-wider font-black">TOP TEAM</p>
+            <p className="text-xs text-gray-400 leading-none tracking-widest uppercase">Atlas</p>
+            <p className="font-sans text-xl text-white leading-none tracking-wider font-black">ACADEMY</p>
           </div>
         </Link>
 

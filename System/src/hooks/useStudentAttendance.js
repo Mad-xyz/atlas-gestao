@@ -1,13 +1,14 @@
 import { useState, useEffect, useMemo } from 'react'
-import { collection, collectionGroup, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore'
+import { collectionGroup, query, where, onSnapshot, limit } from 'firebase/firestore'
 import { db } from '../firebase/config'
-import { COLLECTIONS, SUB_COLLECTIONS } from '../firebase/collections'
+import { useOrganizacao } from '../context/OrganizacaoContext'
 
 /**
  * Hook de Inteligência de Atividade do Aluno
  * Calcula métricas de frequência, sequências (streaks) e histórico detalhado.
  */
 export function useStudentAttendance(studentId) {
+  const { organizacaoAtualId } = useOrganizacao()
   const [attendances, setAttendances] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -17,17 +18,12 @@ export function useStudentAttendance(studentId) {
       return
     }
 
-    // 1. Query na Coleção Raiz (Mais rápida e não requer índice composto)
-    const qRoot = query(
-      collection(db, COLLECTIONS.PRESENCAS_LOG),
-      where('studentId', '==', studentId),
-      limit(50)
-    )
-
-    // 2. Query em Coleção Group (Para dados legados)
+    // Query em Coleção Group escopada pela organização ativa (filtro de tenant).
+    // Coleções raiz legadas (presencas_log) foram BLOQUEADAS nas Security Rules.
     const qGroup = query(
-      collectionGroup(db, SUB_COLLECTIONS.PRESENCAS),
+      collectionGroup(db, 'presencas'),
       where('studentId', '==', studentId),
+      where('organizationId', '==', organizacaoAtualId),
       limit(50)
     )
 
@@ -65,16 +61,11 @@ export function useStudentAttendance(studentId) {
       })
     }
 
-    let rootData = []
-    let groupData = []
-
-    const updateState = () => {
-      const combined = [...rootData, ...groupData]
-      // Remover duplicatas por sessionId ou timestamp aproximado
+    const updateState = (docs) => {
       const unique = []
       const seen = new Set()
       
-      combined.forEach(item => {
+      docs.forEach(item => {
         const key = item.sessionId || `${item.studentId}_${item.sortDate}`
         if (!seen.has(key)) {
           seen.add(key)
@@ -87,27 +78,17 @@ export function useStudentAttendance(studentId) {
       setLoading(false)
     }
 
-    const unsubRoot = onSnapshot(qRoot, (snap) => {
-      rootData = processDocs(snap)
-      updateState()
-    }, (err) => {
-      console.warn('⚠️ [Root Query] Falhou ou vazia:', err)
-      updateState()
-    })
-
     const unsubGroup = onSnapshot(qGroup, (snap) => {
-      groupData = processDocs(snap)
-      updateState()
+      updateState(processDocs(snap))
     }, (err) => {
       console.warn('⚠️ [Group Query] Falhou (provavelmente falta de índice):', err)
-      updateState()
+      setLoading(false)
     })
 
     return () => {
-      unsubRoot()
       unsubGroup()
     }
-  }, [studentId])
+  }, [studentId, organizacaoAtualId])
 
   const stats = useMemo(() => {
     if (loading || attendances.length === 0) {

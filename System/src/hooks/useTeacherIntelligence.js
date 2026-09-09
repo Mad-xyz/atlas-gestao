@@ -4,8 +4,9 @@ import {
     collection, query, where, getDocs,
     orderBy, limit
 } from 'firebase/firestore'
-import { COLLECTIONS, FIELDS } from '../firebase/collections'
+import { COLLECTIONS, FIELDS, ROOT_COLLECTIONS } from '../firebase/collections'
 import { useAuth } from '../context/AuthContext'
+import { useOrganizacao } from '../context/OrganizacaoContext'
 import { useStudents } from './useStudents'
 import { useModalities } from './useModalities'
 import { beltConfig } from '../data/beltConfig'
@@ -46,6 +47,7 @@ const toYMD = (d) => {
  */
 export function useTeacherIntelligence() {
     const { userData, effectiveRole } = useAuth()
+    const { organizacaoAtualId } = useOrganizacao()
     const isPowerUser = String(effectiveRole || userData?.role || '').toLowerCase() === 'admin' || 
                         String(effectiveRole || userData?.role || '').toLowerCase() === 'gestor'
     
@@ -66,7 +68,7 @@ export function useTeacherIntelligence() {
     // ── EFEITO PRINCIPAL ──────────────────────────────────────────────
     useEffect(() => {
         const calculate = async () => {
-            if (loadingStudents || !userData) return;
+            if (loadingStudents || !userData || !organizacaoAtualId) return;
 
             try {
                 const now = getBrasiliaNow();
@@ -90,8 +92,8 @@ export function useTeacherIntelligence() {
                     return studentMods.some(m => tMods.includes(m))
                 });
 
-                // 2. BUSCAR SESSÕES E PRESENÇAS
-                const sessionsRef = collection(db, COLLECTIONS.CHAMADAS)
+                // 2. BUSCAR SESSÕES E PRESENÇAS (MULTI-TENANT)
+                const sessionsRef = collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.CHAMADAS)
                 const qSess = isPowerUser 
                     ? query(sessionsRef, where('data', '>=', sixtyDaysAgoStr))
                     : query(sessionsRef, where('instrutorId', '==', userData?.id || userData?.uid || ''), where('data', '>=', sixtyDaysAgoStr));
@@ -99,7 +101,8 @@ export function useTeacherIntelligence() {
                 const sessSnap = await getDocs(qSess);
                 const sessions = sessSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-                const logsRef = collection(db, COLLECTIONS.PRESENCAS_LOG)
+                // Histórico de presenças agregado: organizations/{orgId}/presencas
+                const logsRef = collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.PRESENCAS)
                 const qLogs = query(logsRef, where('date', '>=', sixtyDaysAgoStr));
                 const logsSnap = await getDocs(qLogs);
                 const allLogs = logsSnap.docs.map(d => d.data());
@@ -315,7 +318,7 @@ export function useTeacherIntelligence() {
         };
 
         calculate();
-    }, [students, loadingStudents, userData, isPowerUser, teacherModalities, allTurmas, gymModalities]);
+    }, [students, loadingStudents, userData, isPowerUser, teacherModalities, allTurmas, gymModalities, organizacaoAtualId]);
 
     return intelligenceData;
 }

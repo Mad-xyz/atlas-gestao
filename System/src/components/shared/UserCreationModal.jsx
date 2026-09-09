@@ -73,11 +73,11 @@ function CustomSelect({ label, value, onChange, options, disabled }) {
 // ── Utilitários de Segurança ──────────────────────────────────────────────────
 /** Converte e-mail comum para o formato administrativo interno */
 const toInternalEmail = (email) => {
-  if (!email || email.includes('@rstopteam.internal')) return email;
+  if (!email || email.includes('@atlas.internal') || email.includes('@rstopteam.internal')) return email;
   return email.toLowerCase()
     .trim()
     .replace('@', '_')
-    .replace(/\./g, '_') + '@rstopteam.internal';
+    .replace(/\./g, '_') + '@atlas.internal';
 };
 
 export default function UserCreationModal({ isOpen, onClose, initialData }) {

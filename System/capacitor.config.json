@@ -1,6 +1,6 @@
 {
-  "appId": "com.rstopteam.app",
-  "appName": "RS Top Team",
+  "appId": "com.atlasacademy.app",
+  "appName": "Atlas Academy",
   "webDir": "dist",
   "bundledWebRuntime": false,
   "server": {

@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { db } from '../firebase/config'
 import { collection, query, onSnapshot, orderBy, getDocs } from 'firebase/firestore'
-import { COLLECTIONS } from '../firebase/collections'
+import { COLLECTIONS, ROOT_COLLECTIONS } from '../firebase/collections'
 import { useModalities } from './useModalities'
+import { useOrganizacao } from '../context/OrganizacaoContext'
 
 let _cachedBills = null
 let _billListeners = []
@@ -110,6 +111,7 @@ function enrichBillWithStudentData(bill, studentsMap) {
 
 export function usePaymentReport() {
   const { modalities } = useModalities()
+  const { organizacaoAtualId } = useOrganizacao()
   const [bills, setBills] = useState(_cachedBills || [])
   const [loading, setLoading] = useState(!_cachedBills)
   const [students, setStudents] = useState([])
@@ -131,10 +133,14 @@ export function usePaymentReport() {
     paymentDateEnd: '',
   })
 
-  // Busca alunos para enriquecimento retroativo
+  // Busca alunos para enriquecimento retroativo (MULTI-TENANT)
   useEffect(() => {
+    if (!organizacaoAtualId) {
+      setLoadingStudents(false)
+      return
+    }
     let active = true
-    getDocs(collection(db, COLLECTIONS.USUARIOS))
+    getDocs(collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.USUARIOS))
       .then(snap => {
         if (!active) return
         const data = snap.docs.map(d => ({ id: d.id, ...d.data() }))
@@ -146,9 +152,15 @@ export function usePaymentReport() {
         setLoadingStudents(false)
       })
     return () => { active = false }
-  }, [])
+  }, [organizacaoAtualId])
 
   useEffect(() => {
+    if (!organizacaoAtualId) {
+      setBills([])
+      setLoading(false)
+      return
+    }
+
     const listener = { setBills, setLoading }
     _billListeners.push(listener)
 
@@ -158,8 +170,9 @@ export function usePaymentReport() {
       return
     }
 
+    // MULTI-TENANT: cobranças em organizations/{orgId}/faturas
     const q = query(
-      collection(db, COLLECTIONS.FATURAMENTO),
+      collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.FATURAS),
       orderBy('dueDate', 'desc')
     )
 
@@ -181,7 +194,7 @@ export function usePaymentReport() {
         _cachedBills = null
       }
     }
-  }, [])
+  }, [organizacaoAtualId])
 
   const updateFilters = useCallback((key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }))

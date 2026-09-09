@@ -1,5 +1,5 @@
 // COMPONENTE DE BARRA LATERAL (SIDEBAR)
-// Centraliza a navegação principal da plataforma RS Top Team.
+// Centraliza a navegação principal da plataforma Atlas Academy.
 // Implementa suporte a múltiplos papéis (admin, gestor, professor, aluno) 
 // e modo de simulação para administradores testarem interfaces.
 import React, { useState } from 'react'
@@ -145,7 +145,7 @@ function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) {
           <div className={`${effectivelyCollapsed ? 'w-10 h-10' : 'w-12 h-12'} flex-shrink-0 relative flex items-center justify-center transition-all duration-500`}>
             <img
               src="/logo.webp"
-              alt="RS Top Team"
+              alt="Atlas Academy"
               className="w-full h-full rounded-full object-cover transition-transform duration-700"
               style={{
                 boxShadow: `0 0 20px color-mix(in srgb, var(--clr-primary) 40%, transparent)`,

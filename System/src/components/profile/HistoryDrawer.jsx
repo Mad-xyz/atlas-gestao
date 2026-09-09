@@ -5,7 +5,8 @@ import { Clock, X, Award, User as UserIcon, CalendarDays } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { useHideMobileNav } from '../../hooks/useHideMobileNav'
-import { COLLECTIONS } from '../../firebase/collections'
+import { COLLECTIONS, SUB_COLLECTIONS, ROOT_COLLECTIONS } from '../../firebase/collections'
+import { useOrganizacao } from '../../context/OrganizacaoContext'
 import { beltConfig } from '../../data/beltConfig'
 import { formatBR } from '../../utils/dateUtils'
 
@@ -27,6 +28,7 @@ const TABS = [
 // ── Component ──────────────────────────────────────────────────
 export default function HistoryDrawer({ userId, userName, userBelt, isOpen, onClose }) {
   useHideMobileNav(isOpen)
+  const { organizacaoAtualId } = useOrganizacao()
 
   const [activeTab, setActiveTab] = useState('presenca')
   const [presencaData, setPresencaData] = useState([])
@@ -35,12 +37,12 @@ export default function HistoryDrawer({ userId, userName, userBelt, isOpen, onCl
 
   // ── Load Attendance ──────────────────────────────────────────
   useEffect(() => {
-    if (!isOpen || !userId) return
+    if (!isOpen || !userId || !organizacaoAtualId) return
     ;(async () => {
       setLoading(prev => ({ ...prev, presenca: true }))
       try {
         const q = query(
-          collection(db, COLLECTIONS.PRESENCAS_LOG),
+          collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.PRESENCAS),
           where('studentId', '==', userId)
         )
         const snap = await getDocs(q)
@@ -80,15 +82,15 @@ export default function HistoryDrawer({ userId, userName, userBelt, isOpen, onCl
         setLoading(prev => ({ ...prev, presenca: false }))
       }
     })()
-  }, [isOpen, userId])
+  }, [isOpen, userId, organizacaoAtualId])
 
   // ── Load Graduations ─────────────────────────────────────────
   useEffect(() => {
-    if (!isOpen || !userId) return
+    if (!isOpen || !userId || !organizacaoAtualId) return
     ;(async () => {
       setLoading(prev => ({ ...prev, graduacao: true }))
       try {
-        const ref = collection(db, 'usuarios', userId, 'graduacoes')
+        const ref = collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.USUARIOS, userId, SUB_COLLECTIONS.GRADUACOES)
         const snap = await getDocs(ref)
         const list = snap.docs.map(d => ({ id: d.id, ...d.data() }))
 
@@ -108,7 +110,7 @@ export default function HistoryDrawer({ userId, userName, userBelt, isOpen, onCl
         setLoading(prev => ({ ...prev, graduacao: false }))
       }
     })()
-  }, [isOpen, userId])
+  }, [isOpen, userId, organizacaoAtualId])
 
   // ── Render: Attendance Tab ──────────────────────────────────
   const renderPresenca = () => (

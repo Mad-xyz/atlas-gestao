@@ -3,20 +3,27 @@ import { db } from '../firebase/config'
 import {
   collection, query, where, onSnapshot
 } from 'firebase/firestore'
-import { COLLECTIONS } from '../firebase/collections'
+import { useOrganizacao } from '../context/OrganizacaoContext'
 
 /**
  * Escuta em tempo real (onSnapshot) as sessões de HOJE.
  * OTIMIZADO: Não busca subcoleções automaticamente para evitar o erro de Assertion Failed
  * e melhorar a performance do Dashboard.
+ * MULTI-TENANT: escuta somente a subcoleção `chamadas` da organização ativa.
  */
 let sessionsCache = []
 
 export function useTodaySessions(instructorId = null) {
+  const { organizacaoAtualId } = useOrganizacao()
   const [sessions, setSessions] = useState(sessionsCache)
   const [loading, setLoading]   = useState(sessionsCache.length === 0)
 
   useEffect(() => {
+    if (!organizacaoAtualId) {
+      setSessions([])
+      setLoading(false)
+      return
+    }
     function getBrasiliaNow() {
       const now = new Date();
       const spStr = now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
@@ -28,7 +35,7 @@ export function useTodaySessions(instructorId = null) {
     const day = String(nowBR.getDate()).padStart(2, '0')
     const todayStr = `${year}-${month}-${day}`
 
-    const sessRef = collection(db, COLLECTIONS.CHAMADAS)
+    const sessRef = collection(db, 'organizations', organizacaoAtualId, 'chamadas')
     
     // Busca apenas pelo campo 'data' (Novo Padrão)
     let q = query(sessRef, where('data', '==', todayStr))
@@ -64,7 +71,7 @@ export function useTodaySessions(instructorId = null) {
     })
 
     return () => unsubscribe()
-  }, [instructorId])
+  }, [instructorId, organizacaoAtualId])
 
   return { sessions, loading }
 }

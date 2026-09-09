@@ -43,6 +43,8 @@ scratch/
 firebase-key.json
 *.key.json
 service-account*.json
+serviceAccount*.json
+scripts/serviceAccount*.json
 .env
 .env.local
 .env.*.local

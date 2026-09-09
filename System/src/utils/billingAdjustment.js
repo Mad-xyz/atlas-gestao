@@ -2,7 +2,8 @@ import { db } from '../firebase/config'
 import { 
   collection, query, where, getDocs, orderBy, limit, updateDoc, serverTimestamp 
 } from 'firebase/firestore'
-import { COLLECTIONS } from '../firebase/collections'
+import { COLLECTIONS, ROOT_COLLECTIONS } from '../firebase/collections'
+import { obterOrganizacaoAtiva } from './organizacaoAtiva'
 
 const normalizeText = (text) => {
   if (!text) return ''
@@ -23,12 +24,19 @@ export async function adjustBillForModalityChange(studentId, newModalities, moda
   }
 
   try {
+    // MULTI-TENANT: cobranças em organizations/{orgId}/faturas
+    const organizacao = obterOrganizacaoAtiva()
+    if (!organizacao) {
+      console.log('[Cobrança] Nenhuma organização ativa')
+      return false
+    }
+
     const today = new Date()
     const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1)
     const currentMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0)
     
     const q = query(
-      collection(db, COLLECTIONS.FATURAMENTO),
+      collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacao, COLLECTIONS.FATURAS),
       where('studentId', '==', studentId),
       where('status', '==', 'pending'),
       orderBy('dueDate', 'desc'),
@@ -74,7 +82,7 @@ export async function adjustBillForModalityChange(studentId, newModalities, moda
     // Verificar se o valor mudou
     const valorAtual = Number(cobrancaData.amount) || 0
     if (novoValor !== valorAtual && novoValor > 0) {
-      await updateDoc(doc(db, COLLECTIONS.FATURAMENTO, cobrancaDoc.id), {
+      await updateDoc(doc(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacao, COLLECTIONS.FATURAS, cobrancaDoc.id), {
         amount: novoValor,
         modalities: newModalities,
         updatedAt: serverTimestamp()

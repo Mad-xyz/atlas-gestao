@@ -9,6 +9,8 @@ import {
   CalendarDays, Target
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { useOrganizacao } from '../../context/OrganizacaoContext'
+import { COLLECTIONS, ROOT_COLLECTIONS, SUB_COLLECTIONS } from '../../firebase/collections'
 import { useStudents } from '../../hooks/useStudents'
 import { useTodaySessions } from '../../hooks/useTodaySessions'
 import { useNotices } from '../../hooks/useNotices'
@@ -63,6 +65,7 @@ function Card({ children, className = '', title, subtitle, icon: Icon, action })
 
 export default function TeacherDashboard() {
   const { user, userData, effectiveRole } = useAuth()
+  const { organizacaoAtualId } = useOrganizacao()
   const isPowerUser = effectiveRole === 'admin' || effectiveRole === 'gestor'
   const [activeTab, setActiveTab] = useState('dashboard') // dashboard, aulas, historico, notas, turmas
   const { students } = useStudents()
@@ -96,9 +99,9 @@ export default function TeacherDashboard() {
 
   // 1. Fetch Teacher-Specific Notes
   useEffect(() => {
-    if (!user?.uid) return
+    if (!user?.uid || !organizacaoAtualId) return
     const q = query(
-      collection(db, 'teachers', user.uid, 'notes'),
+      collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.USUARIOS, user.uid, SUB_COLLECTIONS.ANOTACOES),
       orderBy('createdAt', 'desc')
     )
     const unsub = onSnapshot(q, (snap) => {
@@ -106,7 +109,7 @@ export default function TeacherDashboard() {
       setLoadingNotes(false)
     })
     return () => unsub()
-  }, [user?.uid])
+  }, [user?.uid, organizacaoAtualId])
 
   // 2. Computed Stats for Teacher
   const teacherStats = useMemo(() => {
@@ -250,9 +253,9 @@ export default function TeacherDashboard() {
   // 3. Handlers
   const handleAddNote = async (e) => {
     e.preventDefault()
-    if (!newNote.title || !newNote.content) return
+    if (!newNote.title || !newNote.content || !organizacaoAtualId) return
     try {
-      await addDoc(collection(db, 'teachers', user.uid, 'notes'), {
+      await addDoc(collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.USUARIOS, user.uid, SUB_COLLECTIONS.ANOTACOES), {
         ...newNote,
         createdAt: serverTimestamp(),
       })

@@ -258,7 +258,7 @@ export default function MobileNav() {
               <div className="p-6 flex items-center justify-between">
                 <div className="flex flex-col">
                   <span className="text-white font-black text-xl uppercase tracking-tighter">Explorar</span>
-                  <span className="text-gray-600 text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: 'var(--clr-text-muted)' }}>RS Top Team Academy</span>
+                  <span className="text-gray-600 text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: 'var(--clr-text-muted)' }}>Atlas Academy</span>
                 </div>
                 <button
                   onClick={() => setIsDrawerOpen(false)}

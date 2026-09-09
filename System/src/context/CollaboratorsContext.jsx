@@ -5,10 +5,9 @@
  */
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { collection, query, where, onSnapshot } from 'firebase/firestore'
+import { collection, onSnapshot } from 'firebase/firestore'
 import { onAuthStateChanged } from 'firebase/auth'
 import { db, auth } from '../firebase/config'
-import { COLLECTIONS } from '../firebase/collections'
 import { useOrganizacao } from './OrganizacaoContext'
 
 const CollaboratorsContext = createContext()
@@ -20,44 +19,28 @@ export function CollaboratorsProvider({ children }) {
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (userAutenticado) => {
-      if (userAutenticado && organizacaoAtualId) {
+      // SuperAdmin ou usuário sem organização ativa não deve tentar escutar subcoleções de academias
+      if (userAutenticado && organizacaoAtualId && organizacaoAtualId !== 'undefined') {
         console.log(`📡 [CollaboratorsContext] Sincronizando equipe da academia: ${organizacaoAtualId}`)
-        
-        // 1. Tenta escutar na subcoleção escopada da organização
+
+        // ══════════════════════════════════════════════════════════════════
+        // MULTI-TENANT: escuta SOMENTE a subcoleção `members` da organização.
+        // Coleção global `usuarios` foi BLOQUEADA nas Security Rules —
+        // nenhum fallback global é permitido.
+        // ══════════════════════════════════════════════════════════════════
         const refMembrosOrg = collection(db, 'organizations', organizacaoAtualId, 'members')
-        
+
         const unsubscribeMembros = onSnapshot(refMembrosOrg, (snapshot) => {
-          if (!snapshot.empty) {
-            const listaMembros = snapshot.docs.map(docSnap => ({
-              id: docSnap.id,
-              ...docSnap.data()
-            }))
-            setCollaborators(listaMembros)
-            setLoading(false)
-          } else {
-            // 2. Fallback para a coleção global de usuários da RS Top Team
-            const qGlobal = query(
-              collection(db, COLLECTIONS.USUARIOS),
-              where('papeis.professor', '==', true)
-            )
-            onSnapshot(qGlobal, (snapGlobal) => {
-              const listaGlobal = snapGlobal.docs.map(d => ({ id: d.id, ...d.data() }))
-              setCollaborators(listaGlobal)
-              setLoading(false)
-            }, () => setLoading(false))
-          }
+          const listaMembros = snapshot.docs.map(docSnap => ({
+            id: docSnap.id,
+            ...docSnap.data()
+          }))
+          setCollaborators(listaMembros)
+          setLoading(false)
         }, (erro) => {
-          console.warn('⚠️ [CollaboratorsContext] Fallback para usuários globais:', erro)
-          // Fallback seguro em caso de permissão de subcoleção pendente
-          const qGlobal = query(
-            collection(db, COLLECTIONS.USUARIOS),
-            where('papeis.professor', '==', true)
-          )
-          onSnapshot(qGlobal, (snapGlobal) => {
-            const listaGlobal = snapGlobal.docs.map(d => ({ id: d.id, ...d.data() }))
-            setCollaborators(listaGlobal)
-            setLoading(false)
-          }, () => setLoading(false))
+          console.warn('⚠️ [CollaboratorsContext] Erro ao escutar members da organização:', erro)
+          setCollaborators([])
+          setLoading(false)
         })
 
         return () => unsubscribeMembros()

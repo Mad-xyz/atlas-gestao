@@ -10,9 +10,10 @@ import { useNavigate } from 'react-router-dom'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { collection, query, getDocs, orderBy, limit, doc, addDoc, setDoc, serverTimestamp, increment, where } from 'firebase/firestore'
-import { COLLECTIONS, SUB_COLLECTIONS, FIELDS } from '../../firebase/collections'
+import { COLLECTIONS, SUB_COLLECTIONS, FIELDS, ROOT_COLLECTIONS } from '../../firebase/collections'
 import { useApp } from '../../context/AppContext'
 import { useAuth } from '../../context/AuthContext'
+import { useOrganizacao } from '../../context/OrganizacaoContext'
 import { useStudents } from '../../hooks/useStudents'
 import { extrairDadosAuth } from '../../hooks/usarLogsSistema'
 import { beltConfig } from '../../data/beltConfig'
@@ -136,6 +137,7 @@ export default function AttendancePage() {
   const { modalities, allTurmas, loading: loadingModalities } = useModalities()
   const { users: staffMembers } = useSystemUsers()
   const { user, userData, effectiveRole } = useAuth()
+  const { organizacaoAtualId } = useOrganizacao()
   const usuarioLog = extrairDadosAuth(userData, effectiveRole)
 
   const isPowerUser = effectiveRole === 'admin' || effectiveRole === 'gestor'
@@ -264,7 +266,7 @@ export default function AttendancePage() {
 
   useEffect(() => {
     fetchRecentSessions()
-  }, [user?.uid, isPowerUser])
+  }, [user?.uid, isPowerUser, organizacaoAtualId])
 
   const instructorsOnly = useMemo(() => {
     return staffMembers.filter(s => {
@@ -298,7 +300,7 @@ export default function AttendancePage() {
   }, [currentModality, availableModalities])
 
   async function fetchRecentSessions() {
-    if (!user?.uid) return
+    if (!user?.uid || !organizacaoAtualId) return
 
     try {
       let q
@@ -306,13 +308,13 @@ export default function AttendancePage() {
 
       // 👑 Admin/Gestor veem tudo.
       if (isPowerUser) {
-        q = query(collection(db, COLLECTIONS.CHAMADAS), orderBy(CRIADO_EM, 'desc'), limit(50))
+        q = query(collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.CHAMADAS), orderBy(CRIADO_EM, 'desc'), limit(50))
         const snap = await getDocs(q)
         docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       } else {
         // 🎓 Professor: Busca por instrutorId (Novo padrão PT-BR)
         const qUid = query(
-          collection(db, COLLECTIONS.CHAMADAS),
+          collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.CHAMADAS),
           where(INSTRUTOR_ID, '==', user.uid),
           limit(50)
         )
@@ -322,7 +324,7 @@ export default function AttendancePage() {
         // 🔍 Se não achou nada por UID (PT-BR), tenta pelo instructorId (Legado EN)
         if (docs.length === 0) {
           const qLegacy = query(
-            collection(db, COLLECTIONS.CHAMADAS),
+            collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.CHAMADAS),
             where('instructorId', '==', user.uid),
             limit(50)
           )
@@ -333,7 +335,7 @@ export default function AttendancePage() {
         // 🔍 Se ainda não achou nada, tenta pelo NOME (Professor - Dados muito antigos)
         if (docs.length < 5 && userData?.nome) {
           const qName = query(
-            collection(db, COLLECTIONS.CHAMADAS),
+            collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.CHAMADAS),
             where('professor', '==', userData.nome),
             limit(50)
           )
@@ -361,7 +363,7 @@ export default function AttendancePage() {
 
       // 🆘 FALLBACK FINAL: Se ainda não carregou nada (ex: banco vazio), carrega últimas gerais
       if (docs.length === 0) {
-        const fallbackQ = query(collection(db, COLLECTIONS.CHAMADAS), limit(20))
+        const fallbackQ = query(collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.CHAMADAS), limit(20))
         const snap = await getDocs(fallbackQ)
         const allDocs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
 
@@ -595,7 +597,7 @@ export default function AttendancePage() {
         }
       }
 
-      const tempId = doc(collection(db, COLLECTIONS.CHAMADAS)).id
+      const tempId = doc(collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.CHAMADAS)).id
       const payload = {
         id: tempId,
         [MODALIDADE]: sessionModality,

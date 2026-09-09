@@ -11,7 +11,8 @@ import { db } from '../../firebase/config'
 import {
   getDoc, getDocs, doc, collection, writeBatch, serverTimestamp
 } from 'firebase/firestore'
-import { COLLECTIONS, SUB_COLLECTIONS, FIELDS } from '../../firebase/collections'
+import { COLLECTIONS, SUB_COLLECTIONS, FIELDS, ROOT_COLLECTIONS } from '../../firebase/collections'
+import { useOrganizacao } from '../../context/OrganizacaoContext'
 import { useStudents } from '../../hooks/useStudents'
 import { useModalities } from '../../hooks/useModalities'
 import { beltConfig } from '../../data/beltConfig'
@@ -33,6 +34,7 @@ export default function ReviewAttendancePage() {
   const navigate = useNavigate()
   const { students } = useStudents()
   const { modalities } = useModalities()
+  const { organizacaoAtualId } = useOrganizacao()
 
   const [session, setSession] = useState(null)
   const [records, setRecords] = useState({}) // { studentId: status }
@@ -48,7 +50,7 @@ export default function ReviewAttendancePage() {
     setIsSaving(true)
     try {
       const batch = writeBatch(db)
-      const attendancesRef = collection(db, COLLECTIONS.CHAMADAS, sessionId, SUB_COLLECTIONS.PRESENCAS)
+      const attendancesRef = collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.CHAMADAS, sessionId, SUB_COLLECTIONS.PRESENCAS)
 
       // 📊 Calcular totais para salvar no documento principal da sessão
       const totalCount = Object.values(records).filter(v => v).length
@@ -60,7 +62,7 @@ export default function ReviewAttendancePage() {
       const visitantesCount = filteredStudents.filter(s => records[s.id] === 'present' && (s.isVisitor || s.type === 'visitante')).length
 
       // 1. Atualizar Documento Principal da Sessão
-      const sessionRef = doc(db, COLLECTIONS.CHAMADAS, sessionId)
+      const sessionRef = doc(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.CHAMADAS, sessionId)
       batch.update(sessionRef, {
         totalCount,
         presencasCount,
@@ -91,7 +93,7 @@ export default function ReviewAttendancePage() {
           // Grava TODOS os status para que faltas aparecem no calendário de histórico.
           // Visitantes temporários (temp_vis_) não têm histórico persistente.
           if (!String(studentId).startsWith('temp_vis_') && !student.isTemporary) {
-            const logRef = doc(db, COLLECTIONS.PRESENCAS_LOG, `${studentId}_${sessionId}`)
+            const logRef = doc(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.PRESENCAS, `${studentId}_${sessionId}`)
             batch.set(logRef, {
               studentId: studentId,
               studentName: student[FIELDS.NOME] || student.nome || student.name || 'Desconhecido',
@@ -121,11 +123,11 @@ export default function ReviewAttendancePage() {
 
   useEffect(() => {
     async function fetchData() {
-      if (!sessionId) return
+      if (!sessionId || !organizacaoAtualId) return
       setIsLoading(true)
       try {
         // 1. Fetch Session Metadata (O(1) Direct Lookup)
-        const sessionRef = doc(db, COLLECTIONS.CHAMADAS, sessionId)
+        const sessionRef = doc(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.CHAMADAS, sessionId)
         const sessionSnap = await getDoc(sessionRef)
 
         if (!sessionSnap.exists()) {
@@ -138,7 +140,7 @@ export default function ReviewAttendancePage() {
         setSession(sessionData)
 
         // 2. Fetch Attendance Records for this Session
-        const attendancesRef = collection(db, COLLECTIONS.CHAMADAS, sessionId, SUB_COLLECTIONS.PRESENCAS)
+        const attendancesRef = collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.CHAMADAS, sessionId, SUB_COLLECTIONS.PRESENCAS)
         const recordsSnap = await getDocs(attendancesRef)
         const recordsMap = {}
         const extras = []
@@ -169,7 +171,7 @@ export default function ReviewAttendancePage() {
     }
 
     fetchData()
-  }, [sessionId])
+  }, [sessionId, organizacaoAtualId])
 
   const filteredStudents = useMemo(() => {
     const MODALIDADE = FIELDS.MODALIDADE || 'modalidade'

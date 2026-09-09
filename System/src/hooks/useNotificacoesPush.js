@@ -1,12 +1,15 @@
 import { useEffect, useRef } from 'react'
 import { Capacitor } from '@capacitor/core'
+import { obterOrganizacaoAtiva } from '../utils/organizacaoAtiva'
+import { ROOT_COLLECTIONS, COLLECTIONS } from '../firebase/collections'
 
 /**
  * usePushNotifications
  * 
  * Hook que inicializa o plugin @capacitor/push-notifications,
  * solicita permissão ao usuário e salva o FCM token no Firestore
- * para que o backend possa enviar notificações direcionadas.
+ * (organizations/{orgId}/usuarios/{userId}) para que o backend possa
+ * enviar notificações direcionadas.
  * 
  * IMPORTANTE:
  * - Funciona apenas em builds nativos (Android/iOS).
@@ -45,17 +48,22 @@ export function useNotificacoesPush({ userId, onNotificationReceived } = {}) {
       await PushNotifications.addListener('registration', async (token) => {
         console.log('[Push] FCM Token:', token.value)
 
-        // Salva o token no Firestore vinculado ao usuário logado
+        // Salva o token no Firestore vinculado ao usuário logado (tenant-scoped)
         if (userId) {
           const { doc, setDoc, getFirestore, serverTimestamp } = await import('firebase/firestore')
           const { app } = await import('../firebase/config')
           const db = getFirestore(app)
+          const orgId = obterOrganizacaoAtiva()
 
-          await setDoc(
-            doc(db, 'usuarios', userId),
-            { fcmToken: token.value, tokenAtualizadoEm: serverTimestamp() },
-            { merge: true }
-          )
+          if (orgId) {
+            await setDoc(
+              doc(db, ROOT_COLLECTIONS.ORGANIZATIONS, orgId, COLLECTIONS.USUARIOS, userId),
+              { fcmToken: token.value, tokenAtualizadoEm: serverTimestamp() },
+              { merge: true }
+            )
+          } else {
+            console.warn('[Push] Nenhuma organização ativa — token FCM não salvo.')
+          }
         }
       })
 

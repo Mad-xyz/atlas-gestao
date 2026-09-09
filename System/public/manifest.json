@@ -1,7 +1,7 @@
 {
-  "name": "Rs Top Team",
-  "short_name": "Rs Top Team",
-  "description": "Sistema de Gestão de Academia de Artes Marciais",
+  "name": "Atlas Academy",
+  "short_name": "Atlas",
+  "description": "Atlas Academy - Sistema de Gestão de Artes Marciais",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",

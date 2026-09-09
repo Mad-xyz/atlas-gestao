@@ -2,16 +2,19 @@ import { useState, useEffect, useMemo } from 'react'
 import { useStudents } from './useStudents'
 import { db } from '../firebase/config'
 import { collection, getDocs } from 'firebase/firestore'
-import { COLLECTIONS } from '../firebase/collections'
+import { COLLECTIONS, ROOT_COLLECTIONS } from '../firebase/collections'
+import { useOrganizacao } from '../context/OrganizacaoContext'
 import { beltConfig as defaultBelts } from '../data/beltConfig'
 import { useAuth } from '../context/AuthContext'
 
 /**
  * Hook de Inteligência da Jornada Técnica (SaaS)
  * Gerencia o cálculo dinâmico de progressão, métricas e histórico baseado em regras de negócio.
+ * MULTI-TENANT: regras de graduação em organizations/{orgId}/configuracoes
  */
 export function useStudentJourney() {
   const { userData, effectiveRole } = useAuth()
+  const { organizacaoAtualId } = useOrganizacao()
   const isPowerUser = effectiveRole === 'admin' || effectiveRole === 'gestor'
   const { students, loading: studentsLoading } = useStudents()
   const [configs, setConfigs] = useState({})
@@ -20,10 +23,11 @@ export function useStudentJourney() {
   // 1. Carrega as configurações de graduação (Regras por Modalidade/Categoria)
   useEffect(() => {
     async function fetchConfigs() {
-      if (!userData) return // Evita erro de permissão se não houver usuário logado
+      if (!userData || !organizacaoAtualId) return // Evita erro de permissão se não houver usuário logado
 
       try {
-        const snap = await getDocs(collection(db, COLLECTIONS.CONFIGURACOES_JORNADA))
+        // MULTI-TENANT: escopo organizations/{orgId}/configuracoes
+        const snap = await getDocs(collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.CONFIGURACOES))
         const data = {}
         snap.forEach(d => { data[d.id] = d.data() })
         setConfigs(data)
@@ -34,7 +38,7 @@ export function useStudentJourney() {
       }
     }
     fetchConfigs()
-  }, [userData])
+  }, [userData, organizacaoAtualId])
 
   // 2. Processa a inteligência de dados da Jornada
   const journeyStats = useMemo(() => {

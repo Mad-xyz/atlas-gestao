@@ -1,6 +1,7 @@
 /**
- * Hook para gerenciar as operações de Alunos na arquitetura unificada.
- * Agora todas as mutações são direcionadas para a coleção 'users' com o papel 'aluno'.
+ * Hook para gerenciar as operações de Alunos na arquitetura multi-tenant Atlas.
+ * Todas as mutações são direcionadas para organizations/{orgId}/usuarios
+ * (visitantes também vivem na mesma subcoleção, marcados com isVisitor).
  */
 import { useState, useCallback } from 'react'
 import { db, firebaseConfig } from '../firebase/config'
@@ -26,10 +27,13 @@ import {
   getAuth,
   setPersistence,
   inMemoryPersistence,
-  createUserWithEmailAndPassword
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut
 } from 'firebase/auth'
-import { COLLECTIONS, SUB_COLLECTIONS, FIELDS } from '../firebase/collections'
+import { COLLECTIONS, SUB_COLLECTIONS, FIELDS, ROOT_COLLECTIONS } from '../firebase/collections'
 import { useStudentsContext } from '../context/StudentsContext'
+import { useOrganizacao } from '../context/OrganizacaoContext'
 import { sanitizeString } from '../utils/security'
 import { registrarAtividade, extrairDadosAuth } from './usarLogsSistema'
 import { useAuth } from '../context/AuthContext'
@@ -50,12 +54,8 @@ const vAuth = getVerifyAuth()
 const getPinAuthEmail = (raw) => {
   const rawId = String(raw || '').toLowerCase().trim()
   if (rawId.includes('@') && !rawId.endsWith('.internal')) return rawId
-  return `${rawId.replace(/[^a-z0-9]/g, '_')}@rstopteam.internal`
+  return `${rawId.replace(/[^a-z0-9]/g, '_')}@atlas.internal`
 }
-
-// Nome da coleção unificada
-const USERS_COLLECTION = 'usuarios'
-const VISITORS_COLLECTION = 'visitantes' // Nova coleção para Leads
 
 /**
  * Normaliza o ID do usuário (E-mail ou Nome sanitizado).
@@ -119,10 +119,24 @@ const getNextMonthlyDueDateFromDate = (baseDate) => {
 export function useStudents() {
   const { students, isLoadingStudents } = useStudentsContext()
   const { userData, effectiveRole } = useAuth()
+  const { organizacaoAtualId } = useOrganizacao()
   const [isUpdating, setIsUpdating] = useState(false)
 
   // Dados do usuário logado para registrar nos logs
   const dadosLog = extrairDadosAuth(userData, effectiveRole)
+
+  // Referência tenant-scoped (organizations/{orgId}/usuarios)
+  const getUsuarioRef = useCallback((id) => {
+    if (!organizacaoAtualId) throw new Error('Nenhuma organização ativa')
+    return doc(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.USUARIOS, id)
+  }, [organizacaoAtualId])
+
+  const getTurmaRef = useCallback((mIdRaw, tIdRaw) => {
+    const mId = String(mIdRaw || '').toLowerCase()
+    const tId = String(tIdRaw || '').toLowerCase()
+    if (!mId || !tId || !organizacaoAtualId) return null
+    return doc(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.MODALIDADES, mId, SUB_COLLECTIONS.TURMAS, tId)
+  }, [organizacaoAtualId])
 
   /**
    * Gera um PIN aleatório de 6 dígitos.
@@ -135,6 +149,7 @@ export function useStudents() {
    * Atualiza o status de presença rápida do aluno (Marcando presença no dia).
    */
   const updateStudentStatus = useCallback(async (id, newStatus) => {
+    if (!organizacaoAtualId) throw new Error('Nenhuma organização ativa')
     const student = students.find(s => s.id === id)
     const payload = {
       [FIELDS.STATUS]: newStatus ?? null,
@@ -145,26 +160,27 @@ export function useStudents() {
       payload.lastAttendanceAt = serverTimestamp()
     }
 
-    // Atualiza o documento na coleção unificada
-    const collectionName = student?.isVisitor ? VISITORS_COLLECTION : USERS_COLLECTION
-    await updateDoc(doc(db, collectionName, id), payload)
+    // MULTI-TENANT: documento na subcoleção `usuarios` da organização ativa
+    await updateDoc(getUsuarioRef(id), payload)
 
-    // Registra no histórico de chamadas
+    // Registra no histórico de presenças (organizations/{orgId}/presencas)
     if (newStatus) {
-      await addDoc(collection(db, COLLECTIONS.PRESENCAS_LOG), {
+      await addDoc(collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.PRESENCAS), {
         studentId: id,
         studentName: student?.name || id,
         date: serverTimestamp(),
         status: newStatus,
-        modality: student?.modality || 'Jiu Jitsu'
+        modality: student?.modality || 'Jiu Jitsu',
+        organizationId: organizacaoAtualId
       })
     }
-  }, [students])
+  }, [students, organizacaoAtualId, getUsuarioRef])
 
   /**
    * Altera o status administrativo do aluno (Ativo, Inativo, Suspenso).
    */
   const changeStudentStatus = useCallback(async (id, newStatus, extra = {}) => {
+    if (!organizacaoAtualId) throw new Error('Nenhuma organização ativa')
     const student = students.find(s => s.id === id)
     const payload = {
       [FIELDS.STATUS]: newStatus,
@@ -173,8 +189,7 @@ export function useStudents() {
     if (extra.reason !== undefined) payload.statusReason = extra.reason
     if (extra.returnDate !== undefined) payload.statusReturnDate = extra.returnDate
 
-    const collectionName = student?.isVisitor ? VISITORS_COLLECTION : USERS_COLLECTION
-    await updateDoc(doc(db, collectionName, id), payload)
+    await updateDoc(getUsuarioRef(id), payload)
 
     // Log da atividade: status alterado
     const statusAntigo = student?.[FIELDS.STATUS] || student?.status || 'desconhecido'
@@ -184,6 +199,7 @@ export function useStudents() {
       `${student?.name || id}: ${statusAntigo} → ${newStatus}`,
       {
         ...dadosLog,
+        organizationId: organizacaoAtualId,
         categoria: 'aluno',
         alvoId: id,
         alvoNome: student?.name || id,
@@ -191,27 +207,20 @@ export function useStudents() {
         valorNovo: newStatus
       }
     )
-  }, [students, dadosLog])
+  }, [students, dadosLog, organizacaoAtualId, getUsuarioRef])
 
   /**
-   * Realiza o 'Soft Delete' do aluno. 
-   * Em vez de remover permanentemente, altera o status para 'Inativo'
-   * e registra a data de desativação para auditoria e histórico.
-   */
-  /**
    * DELETAR ALUNO (Hard Delete)
-   * Alterado para exclusão permanente conforme solicitado pelo usuário, 
-   * já que o Soft Delete mantinha o registro visível e causava erros de permissão em sub-serviços.
+   * Exclusão permanente com limpeza de turmas e subcoleções.
    */
   const deleteStudent = useCallback(async (studentId) => {
-    if (!studentId) return
+    if (!studentId || !organizacaoAtualId) return
 
     const target = students.find(s => s.id === studentId)
     if (!target) return
 
     try {
-      const collectionName = target?.isVisitor ? VISITORS_COLLECTION : USERS_COLLECTION
-      const userRef = doc(db, collectionName, studentId)
+      const userRef = getUsuarioRef(studentId)
 
       // 🏆 DECREMENTO DE TURMAS (Limpeza antes de deletar)
       if (!target.isVisitor && target.turmas && target.turmas.length > 0) {
@@ -220,7 +229,8 @@ export function useStudents() {
           const turmaPromises = target.turmas.map(async (uniqueId) => {
             const [modId, tId] = uniqueId.includes(':') ? uniqueId.split(':') : [null, uniqueId];
             if (modId && tId) {
-              const tRef = doc(db, COLLECTIONS.MODALIDADES, modId, SUB_COLLECTIONS.TURMAS, tId);
+              const tRef = getTurmaRef(modId, tId);
+              if (!tRef) return;
               await updateDoc(tRef, {
                 totalAlunos: increment(-1),
                 alunos: arrayRemove(studentEmail)
@@ -253,6 +263,7 @@ export function useStudents() {
         target?.name || studentId,
         {
           ...dadosLog,
+          organizationId: organizacaoAtualId,
           categoria: 'aluno',
           alvoId: studentId,
           alvoNome: target?.name || studentId
@@ -262,13 +273,14 @@ export function useStudents() {
       console.error('Erro ao remover aluno:', e)
       throw e
     }
-  }, [students, dadosLog])
+  }, [students, dadosLog, organizacaoAtualId, getUsuarioRef, getTurmaRef])
 
 
   /**
    * ADICIONAR NOVO ALUNO / VISITANTE
    */
   const addStudent = useCallback(async (newStudent, modality, options = {}) => {
+    if (!organizacaoAtualId) throw new Error('Nenhuma organização ativa')
     const { isVisitor = false, belt = 'white', stripes = 0 } = options
 
     // Normalização de modalidades (Deduplicação e Padronização)
@@ -337,6 +349,7 @@ export function useStudents() {
       [FIELDS.CRIADO_EM]: serverTimestamp(),
       startDate: newStudent.startDate || null,
       [FIELDS.ATUALIZADO_EM]: serverTimestamp(),
+      organizationId: organizacaoAtualId,
       ultima_visita: null,
       total_visitas: 0
     }
@@ -348,13 +361,13 @@ export function useStudents() {
 
     const emailKey = (newStudent.email || '').toLowerCase().trim()
 
-    const targetCollection = isVisitor ? VISITORS_COLLECTION : USERS_COLLECTION
-    await setDoc(doc(db, targetCollection, docId), payload, { merge: true })
+    // MULTI-TENANT: visitantes e alunos na mesma subcoleção `usuarios` da organização
+    await setDoc(getUsuarioRef(docId), payload, { merge: true })
 
     // 🔒 SALVAR PIN NA SUBCOLEÇÃO SEGURA (Hardening 007)
     if (!isVisitor) {
       try {
-        const segredosRef = doc(db, targetCollection, docId, 'privado', 'segredos');
+        const segredosRef = doc(getUsuarioRef(docId), 'privado', 'segredos');
         await setDoc(segredosRef, { 
           pin: pin,
           updatedAt: serverTimestamp() 
@@ -367,17 +380,14 @@ export function useStudents() {
     // 🏆 ATUALIZAÇÃO DE TURMAS (Contabilização)
     if (!isVisitor && payload.turmas && payload.turmas.length > 0) {
       try {
-        const studentId = docId; // O ID do aluno (e-mail ou slug)
         const studentEmail = payload.email || docId;
 
         const turmaPromises = payload.turmas.map(async (uniqueId) => {
           const [mIdRaw, tIdRaw] = uniqueId.includes(':') ? uniqueId.split(':') : [null, uniqueId];
           if (!mIdRaw || !tIdRaw) return;
 
-          const modalityId = mIdRaw.toLowerCase();
-          const turmaId = tIdRaw.toLowerCase();
-
-          const turmaRef = doc(db, COLLECTIONS.MODALIDADES, modalityId, SUB_COLLECTIONS.TURMAS, turmaId);
+          const turmaRef = getTurmaRef(mIdRaw, tIdRaw);
+          if (!turmaRef) return;
           await updateDoc(turmaRef, {
             totalAlunos: increment(1),
             alunos: arrayUnion(studentEmail)
@@ -396,7 +406,38 @@ export function useStudents() {
       try {
         const pinAuthEmail = getPinAuthEmail(emailKey)
         const securePIN = pin.length >= 6 ? pin : pin.padEnd(6, '0')
-        await createUserWithEmailAndPassword(vAuth, pinAuthEmail, securePIN)
+
+        // Obtém (ou cria) a conta de autenticação para capturar o UID do usuário,
+        // que é a chave da membership na organização.
+        let contaAuth
+        try {
+          contaAuth = await createUserWithEmailAndPassword(vAuth, pinAuthEmail, securePIN)
+        } catch (e) {
+          if (e.code === 'auth/email-already-in-use') {
+            contaAuth = await signInWithEmailAndPassword(vAuth, pinAuthEmail, securePIN)
+            await signOut(vAuth)
+          } else {
+            throw e
+          }
+        }
+
+        const uidAuth = contaAuth.user.uid
+        // MULTI-TENANT: membership vincula o usuário à organização (fonte de acesso no login).
+        // Idempotente (setDoc merge): retries não duplicam o vínculo.
+        try {
+          await setDoc(doc(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.MEMBROS, uidAuth), {
+            userId: uidAuth,
+            email: payload.email,
+            nome: payload.name,
+            role: 'aluno',
+            status: 'ativo',
+            organizationId: organizacaoAtualId,
+            criadoEm: serverTimestamp()
+          }, { merge: true })
+        } catch (e) {
+          console.error('❌ Falha ao criar membership do aluno:', e)
+        }
+
         console.log(`🔐 Academy Auth: Conta criada para ${emailKey} com sucesso.`)
       } catch (e) {
         if (e.code === 'auth/email-already-in-use') {
@@ -433,7 +474,8 @@ export function useStudents() {
         const initFirstTurma = initTurmas[0]
         const initTurmaName = typeof initFirstTurma === 'object' ? (initFirstTurma?.name || '') : (initFirstTurma || '')
 
-        await addDoc(collection(db, COLLECTIONS.FATURAMENTO), {
+        // MULTI-TENANT: faturas em organizations/{orgId}/faturas
+        await addDoc(collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.FATURAS), {
           studentId: docId,
           studentName: payload.name,
           amount: Number(payload.planValue) || 0,
@@ -443,7 +485,8 @@ export function useStudents() {
           modalityName: initModalityName || null,
           turmaName: initTurmaName || null,
           paidAt: serverTimestamp(), // Marcar como pago no momento da criação
-          createdAt: serverTimestamp()
+          createdAt: serverTimestamp(),
+          organizationId: organizacaoAtualId
         })
         
         console.log(`✅ Faturamento inicial PAGO criado para ${payload.name} - Vencimento: ${dueDateStr}`)
@@ -459,6 +502,7 @@ export function useStudents() {
       sanitizeString(newStudent.name || 'Novo aluno'),
       {
         ...dadosLog,
+        organizationId: organizacaoAtualId,
         categoria: 'aluno',
         alvoId: docId,
         alvoNome: sanitizeString(newStudent.name || 'Novo aluno')
@@ -466,7 +510,7 @@ export function useStudents() {
     )
 
     return { id: docId, ...payload }
-  }, [generatePIN, dadosLog])
+  }, [generatePIN, dadosLog, organizacaoAtualId, getUsuarioRef, getTurmaRef])
 
   /**
    * ADICIONAR NOVO VISITANTE (Lead)
@@ -512,10 +556,10 @@ export function useStudents() {
    * Atualiza dados cadastrais do perfil.
    */
   const updateStudentProfile = useCallback(async (id, updates) => {
+    if (!organizacaoAtualId) throw new Error('Nenhuma organização ativa')
     setIsUpdating(true)
     try {
       const student = (students || []).find(s => s.id === id)
-      const collectionName = student?.isVisitor ? VISITORS_COLLECTION : USERS_COLLECTION
 
       const payload = {
         ...updates,
@@ -581,9 +625,8 @@ export function useStudents() {
           toAdd.forEach(uniqueId => {
             const [mIdRaw, tIdRaw] = uniqueId.includes(':') ? uniqueId.split(':') : [null, uniqueId];
             if (mIdRaw && tIdRaw) {
-              const mId = mIdRaw.toLowerCase();
-              const tId = tIdRaw.toLowerCase();
-              const ref = doc(db, COLLECTIONS.MODALIDADES, mId, SUB_COLLECTIONS.TURMAS, tId);
+              const ref = getTurmaRef(mIdRaw, tIdRaw);
+              if (!ref) return;
               syncPromises.push(updateDoc(ref, {
                 totalAlunos: increment(1),
                 alunos: arrayUnion(studentEmail)
@@ -594,9 +637,8 @@ export function useStudents() {
           toRemove.forEach(uniqueId => {
             const [mIdRaw, tIdRaw] = uniqueId.includes(':') ? uniqueId.split(':') : [null, uniqueId];
             if (mIdRaw && tIdRaw) {
-              const mId = mIdRaw.toLowerCase();
-              const tId = tIdRaw.toLowerCase();
-              const ref = doc(db, COLLECTIONS.MODALIDADES, mId, SUB_COLLECTIONS.TURMAS, tId);
+              const ref = getTurmaRef(mIdRaw, tIdRaw);
+              if (!ref) return;
               syncPromises.push(updateDoc(ref, {
                 totalAlunos: increment(-1),
                 alunos: arrayRemove(studentEmail)
@@ -613,7 +655,7 @@ export function useStudents() {
         }
       }
 
-      await updateDoc(doc(db, collectionName, id), payload)
+      await updateDoc(getUsuarioRef(id), payload)
 
       const IGNORAR = ['genero', 'ddd', 'telefone_limpo', 'telefone_completo']
       const normalizar = (v) => {
@@ -651,6 +693,7 @@ export function useStudents() {
         '',
         {
           ...dadosLog,
+          organizationId: organizacaoAtualId,
           categoria: 'aluno',
           alvoId: id,
           alvoNome: student?.name || id,
@@ -663,19 +706,20 @@ export function useStudents() {
     } finally {
       setIsUpdating(false)
     }
-  }, [students, dadosLog])
+  }, [students, dadosLog, organizacaoAtualId, getUsuarioRef, getTurmaRef])
 
   /**
    * Remove um visitante da coleção de leads.
    */
   const deleteVisitor = useCallback(async (visitorId) => {
+    if (!organizacaoAtualId) return false
     try {
-      await deleteDoc(doc(db, VISITORS_COLLECTION, visitorId))
+      await deleteDoc(getUsuarioRef(visitorId))
       return true
     } catch (err) {
       throw err
     }
-  }, [])
+  }, [organizacaoAtualId, getUsuarioRef])
 
   return {
     students,

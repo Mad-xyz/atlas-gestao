@@ -7,9 +7,9 @@
  * Este hook usa cache agressivo (5 minutos) pois dados de equipe mudam raramente.
  */
 import { useState, useEffect, useRef } from 'react'
-import { collection, query, getDocs, where } from 'firebase/firestore'
+import { collection, query, getDocs } from 'firebase/firestore'
 import { db } from '../firebase/config'
-import { COLLECTIONS } from '../firebase/collections'
+import { useOrganizacao } from '../context/OrganizacaoContext'
 
 const CACHE_TTL_MS = 5 * 60_000 // 5 minutos — dados de equipe não mudam com frequência
 
@@ -17,7 +17,7 @@ let _cache = null
 let _cacheTime = 0
 let _pendingFetch = null // Evita fetches duplicados simultâneos
 
-async function fetchTeamStats() {
+async function fetchTeamStats(organizacaoAtualId) {
   const now = Date.now()
 
   // Retorna cache se ainda válido
@@ -30,8 +30,9 @@ async function fetchTeamStats() {
 
   _pendingFetch = (async () => {
     try {
-      // O sistema moderno usa a coleção unificada 'usuarios'
-      const snap = await getDocs(query(collection(db, COLLECTIONS.USUARIOS)))
+      if (!organizacaoAtualId) return { total: 0, active: 0, byRole: {} }
+      // Equipe escopada na organização ativa (subcoleção `members`)
+      const snap = await getDocs(query(collection(db, 'organizations', organizacaoAtualId, 'members')))
       let total = 0, active = 0
       const byRole = {}
 
@@ -62,16 +63,17 @@ async function fetchTeamStats() {
 }
 
 export function useTeamStats() {
+  const { organizacaoAtualId } = useOrganizacao()
   const [stats, setStats] = useState(_cache || { total: 0, active: 0, byRole: {} })
   const [loading, setLoading] = useState(!_cache)
 
   useEffect(() => {
     let cancelled = false
-    fetchTeamStats()
+    fetchTeamStats(organizacaoAtualId)
       .then(result => { if (!cancelled) { setStats(result); setLoading(false) } })
       .catch(err => { console.error('Erro ao carregar estatísticas da equipe:', err); setLoading(false) })
     return () => { cancelled = true }
-  }, [])
+  }, [organizacaoAtualId])
 
   return { stats, loading }
 }

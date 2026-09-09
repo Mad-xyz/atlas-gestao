@@ -6,7 +6,8 @@ import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { beltConfig } from '../../data/beltConfig'
 import { useHideMobileNav } from '../../hooks/useHideMobileNav'
-import { COLLECTIONS } from '../../firebase/collections'
+import { COLLECTIONS, ROOT_COLLECTIONS, SUB_COLLECTIONS } from '../../firebase/collections'
+import { useOrganizacao } from '../../context/OrganizacaoContext'
 
 const BELT_ORDER = ['white', 'blue', 'purple', 'brown', 'black']
 
@@ -43,6 +44,7 @@ function timeDiff(from, to) {
 
 export default function GraduationHistoryModal({ student, isOpen, onClose }) {
   useHideMobileNav(isOpen)
+  const { organizacaoAtualId } = useOrganizacao()
   const [records, setRecords] = useState([])
   const [professors, setProfessors] = useState([])
   const [loading, setLoading] = useState(true)
@@ -65,21 +67,23 @@ export default function GraduationHistoryModal({ student, isOpen, onClose }) {
   }, [showForm, student?.id])
 
   async function loadProfessors() {
+    if (!organizacaoAtualId) return
     try {
-      const snap = await getDocs(collection(db, 'equipe'))
+      const snap = await getDocs(collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.MEMBERS))
       const list = snap.docs.map(d => d.data().name).filter(Boolean)
       setProfessors([...new Set(list)])
     } catch (err) { console.error(err) }
   }
 
   async function loadDynamicBelts() {
-    if (!student) return
+    if (!student || !organizacaoAtualId) return
     setLoadingBelts(true)
     try {
       const modalityName = student.modalityPrimary || (student.modalities && student.modalities[0]) || 'Jiu Jitsu'
       const ageCategory = student.ageCategory || 'Adulto'
       
-      const q = query(collection(db, COLLECTIONS.MODALIDADES), where('name', '==', modalityName))
+      // MULTI-TENANT: modalidades em organizations/{orgId}/modalidades
+      const q = query(collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.MODALIDADES), where('name', '==', modalityName))
       const snap = await getDocs(q)
       
       if (!snap.empty) {
@@ -109,10 +113,11 @@ export default function GraduationHistoryModal({ student, isOpen, onClose }) {
   }
 
   async function loadRecords() {
-    if (!student?.id) return
+    if (!student?.id || !organizacaoAtualId) return
     setLoading(true)
     try {
-      const ref = collection(db, 'usuarios', student.id, 'graduacoes')
+      // MULTI-TENANT: graduações em organizations/{orgId}/usuarios/{studentId}/graduacoes
+      const ref = collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.USUARIOS, student.id, SUB_COLLECTIONS.GRADUACOES)
       const snap = await getDocs(ref)
 
       const list = snap.docs.map(d => ({ id: d.id, ...d.data() }))
@@ -141,7 +146,7 @@ export default function GraduationHistoryModal({ student, isOpen, onClose }) {
       loadProfessors()
       loadDynamicBelts()
     }
-  }, [isOpen, student?.id])
+  }, [isOpen, student?.id, organizacaoAtualId])
 
   async function handleSave() {
     let beltToSave = form.belt
@@ -192,7 +197,8 @@ export default function GraduationHistoryModal({ student, isOpen, onClose }) {
 
     setSaving(true)
     try {
-      await addDoc(collection(db, 'usuarios', student.id, 'graduacoes'), {
+      // MULTI-TENANT: graduação dentro da organização ativa
+      await addDoc(collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.USUARIOS, student.id, SUB_COLLECTIONS.GRADUACOES), {
         belt: beltToSave,
         beltLabel: beltLabel,
         stripes: currentStripes,
@@ -202,7 +208,7 @@ export default function GraduationHistoryModal({ student, isOpen, onClose }) {
         createdAt: serverTimestamp()
       })
 
-      await updateDoc(doc(db, 'usuarios', student.id), {
+      await updateDoc(doc(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.USUARIOS, student.id), {
         belt: beltToSave,
         'jornada_tecnica.faixa_atual': beltToSave,
         stripes: currentStripes,
@@ -224,8 +230,9 @@ export default function GraduationHistoryModal({ student, isOpen, onClose }) {
 
   async function handleDeleteRecord(id) {
     if (!window.confirm('Deseja realmente excluir este registro de graduacao?')) return
+    if (!organizacaoAtualId) return
     try {
-      await deleteDoc(doc(db, 'usuarios', student.id, 'graduacoes', id))
+      await deleteDoc(doc(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.USUARIOS, student.id, SUB_COLLECTIONS.GRADUACOES, id))
       loadRecords()
     } catch (err) {
       console.error('Erro ao excluir:', err)

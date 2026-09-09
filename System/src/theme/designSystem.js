@@ -1,8 +1,8 @@
 /**
- * Rs Top Team — Design System
+ * Atlas Academy — Design System
  * ============================
  * Fonte de verdade para todas as decisões visuais do app.
- * Baseado no reference: Rs Top Team.html
+ * Baseado no reference: Atlas Academy.html
  *
  * USO: importe os tokens que precisar em seus componentes.
  * As classes Tailwind equivalentes estão listadas como comentário.

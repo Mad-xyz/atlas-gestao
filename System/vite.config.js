@@ -44,9 +44,9 @@ export default defineConfig({
         ]
       },
       manifest: {
-        name: 'Rs Top Team',
-        short_name: 'Rs Top Team',
-        description: 'Sistema de Gestão de Academia de Artes Marciais',
+        name: 'Atlas Academy',
+        short_name: 'Atlas',
+        description: 'Atlas Academy - Sistema de Gestão de Artes Marciais',
         theme_color: '#6D001A',
         background_color: '#000000',
         display: 'standalone',

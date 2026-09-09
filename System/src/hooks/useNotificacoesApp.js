@@ -5,7 +5,8 @@ import {
   onSnapshot, where, Timestamp
 } from 'firebase/firestore'
 import { db } from '../firebase/config'
-import { COLLECTIONS, FIELDS } from '../firebase/collections'
+import { COLLECTIONS, FIELDS, ROOT_COLLECTIONS } from '../firebase/collections'
+import { useOrganizacao } from '../context/OrganizacaoContext'
 
 // ID único incremental para cada notificação local
 let _notifId = 1
@@ -44,7 +45,7 @@ async function dispararNotificacao({ titulo, corpo, extra = {} }) {
         title: titulo,
         body: corpo,
         extra,
-        channelId: 'rstopteam_default',
+        channelId: 'atlas_default',
         smallIcon: 'ic_launcher',
         iconColor: '#6D001A', // Cor do tema da academia
         sound: 'default',
@@ -56,10 +57,11 @@ async function dispararNotificacao({ titulo, corpo, extra = {} }) {
 /**
  * useNotificacoesApp
  *
- * Escuta 3 fontes do Firestore em tempo real e dispara notificações locais:
- *  1. Novos AVISOS / ANÚNCIOS (coleção `eventos`)
- *  2. Novo HORÁRIO de aula adicionado (coleção `eventos` com tipo horario)
- *  3. CHAMADA FINALIZADA com status do aluno (coleção `chamadas` + sub `presencas`)
+ * Escuta 3 fontes do Firestore em tempo real (todas tenant-scoped) e dispara
+ * notificações locais:
+ *  1. Novos AVISOS / ANÚNCIOS (organizations/{orgId}/eventos)
+ *  2. Novo HORÁRIO de aula adicionado (organizations/{orgId}/eventos com tipo horario)
+ *  3. CHAMADA FINALIZADA com status do aluno (organizations/{orgId}/chamadas + sub `presencas`)
  *
  * @param {object} params
  * @param {string} params.alunoId   - UID do aluno logado (para filtrar a chamada dele)
@@ -67,15 +69,19 @@ async function dispararNotificacao({ titulo, corpo, extra = {} }) {
  */
 export function useNotificacoesApp({ alunoId, role } = {}) {
   const unsubscribers = useRef([])
+  const { organizacaoAtualId } = useOrganizacao()
 
   useEffect(() => {
-    // Inicializa o canal de notificação no Android (necessário para Android 8+)
+    // Se o usuário não estiver logado ou não houver organização ativa (ex: SuperAdmin ou tela pública), não escuta
+    if (!alunoId || !organizacaoAtualId || organizacaoAtualId === 'undefined') return
+
+    // Timestamp de início: apenas documentos criados APÓS o carregamento do hook.(necessário para Android 8+)
     async function criarCanal() {
       if (!Capacitor.isNativePlatform()) return
       const { LocalNotifications } = await import('@capacitor/local-notifications')
       await LocalNotifications.createChannel({
-        id: 'rstopteam_default',
-        name: 'RS Top Team',
+        id: 'atlas_default',
+        name: 'Atlas Academy',
         description: 'Notificações da academia',
         importance: 4, // HIGH
         sound: 'default',
@@ -90,8 +96,9 @@ export function useNotificacoesApp({ alunoId, role } = {}) {
     // Assim, ao abrir o app, ele não re-notifica avisos antigos.
     const agora = Timestamp.fromDate(new Date(Date.now() - 60_000))
 
+    // MULTI-TENANT: escopo organizations/{orgId}/eventos
     const qAvisos = query(
-      collection(db, COLLECTIONS.EVENTOS),
+      collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.EVENTOS),
       where(FIELDS.CRIADO_EM, '>=', agora),
       orderBy(FIELDS.CRIADO_EM, 'desc'),
       limit(10)
@@ -134,8 +141,9 @@ export function useNotificacoesApp({ alunoId, role } = {}) {
     if (alunoId) {
       const agoraParaChamada = Timestamp.fromDate(new Date(Date.now() - 60_000))
 
+      // MULTI-TENANT: escopo organizations/{orgId}/chamadas
       const qChamadas = query(
-        collection(db, COLLECTIONS.CHAMADAS),
+        collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.CHAMADAS),
         where(FIELDS.FINALIZADA, '==', true),
         where(FIELDS.CRIADO_EM, '>=', agoraParaChamada),
         orderBy(FIELDS.CRIADO_EM, 'desc'),
@@ -153,7 +161,7 @@ export function useNotificacoesApp({ alunoId, role } = {}) {
           // Busca a presença deste aluno específico nesta chamada
           try {
             const { getDocs, collection: col } = await import('firebase/firestore')
-            const presSnap = await getDocs(col(db, COLLECTIONS.CHAMADAS, chamadaId, 'presencas'))
+            const presSnap = await getDocs(col(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.CHAMADAS, chamadaId, 'presencas'))
 
             presSnap.forEach((presDoc) => {
               const pres = presDoc.data()
@@ -193,5 +201,5 @@ export function useNotificacoesApp({ alunoId, role } = {}) {
       unsubscribers.current.forEach((unsub) => unsub())
       unsubscribers.current = []
     }
-  }, [alunoId, role])
+  }, [alunoId, role, organizacaoAtualId])
 }

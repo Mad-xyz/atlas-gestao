@@ -3,6 +3,10 @@
  * 
  * Responsável por criar sessões de aula e registrar a assiduidade dos usuários
  * no escopo da organização ativa.
+ * 
+ * MULTI-TENANT: todas as escritas/leituras são escopadas em
+ * organizations/{orgId}/chamadas (e presencas por chamada). Nenhuma coleção
+ * raiz legada é utilizada.
  */
 import { db } from '../firebase/config'
 import { 
@@ -10,25 +14,30 @@ import {
   getDocs, query, orderBy, limit, 
   collectionGroup, where, setDoc, deleteDoc, increment
 } from 'firebase/firestore'
-import { COLLECTIONS, SUB_COLLECTIONS, FIELDS } from '../firebase/collections'
+import { COLLECTIONS, SUB_COLLECTIONS, FIELDS, ROOT_COLLECTIONS } from '../firebase/collections'
 import { registrarAtividade } from '../hooks/usarLogsSistema'
+import { obterOrganizacaoAtiva } from '../utils/organizacaoAtiva'
 
 const USERS_COLLECTION = COLLECTIONS.USUARIOS
-const VISITORS_COLLECTION = 'visitantes'
+
+/** Resolve a organização alvo (explícita > store singleton) */
+const resolverOrg = (orgIdExplicito) => orgIdExplicito || obterOrganizacaoAtiva()
 
 export const attendanceService = {
   /**
    * Cria uma nova sessão (aula) na organização ativa.
    */
-  async createSession(payload, organizationId = 'rs-top-team') {
-    console.log(`📅 Criando nova sessão na organização ${organizationId}:`, payload.id, payload.classTitle)
+  async createSession(payload, organizationId = null) {
+    const orgId = resolverOrg(organizationId)
+    if (!orgId) throw new Error('Nenhuma organização ativa')
+    console.log(`📅 Criando nova sessão na organização ${orgId}:`, payload.id, payload.classTitle)
     try {
       const now = new Date()
       const simpleSeqId = `99${now.getMinutes()}${now.getSeconds()}`
       
       const sessionData = {
         ...payload,
-        organizationId,
+        organizationId: orgId,
         seqId: Number(simpleSeqId),
         presencasCount: 0,
         faltasCount: 0,
@@ -37,15 +46,9 @@ export const attendanceService = {
         [FIELDS.CRIADO_EM]: serverTimestamp(),
       }
       
-      const refSessao = doc(db, 'organizations', organizationId, 'sessions', payload.id)
+      // Escopo tenant: organizations/{orgId}/chamadas/{id}
+      const refSessao = doc(db, ROOT_COLLECTIONS.ORGANIZATIONS, orgId, COLLECTIONS.CHAMADAS, payload.id)
       await setDoc(refSessao, sessionData)
-
-      // Salva réplica no legado para compatibilidade total
-      try {
-        await setDoc(doc(db, COLLECTIONS.CHAMADAS, payload.id), sessionData)
-      } catch (err) {
-        console.warn('⚠️ Réplica legada não pôde ser gravada:', err)
-      }
 
       console.log('✅ Sessão criada com sucesso no Firestore.')
       return sessionData
@@ -58,11 +61,13 @@ export const attendanceService = {
   /**
    * REGISTRO DE CHAMADA EM LOTE (Batch Multi-Tenant)
    */
-  async markAttendanceBatch(activeSession, activeList, usuarioLog = null, organizationId = 'rs-top-team') {
+  async markAttendanceBatch(activeSession, activeList, usuarioLog = null, organizationId = null) {
+    const orgId = resolverOrg(organizationId)
+    if (!orgId) throw new Error('Nenhuma organização ativa')
     console.log(`📝 Registrando presenças em lote para ${activeList.length} alunos...`)
     try {
       const batch = writeBatch(db)
-      const sessionRef = doc(db, 'organizations', organizationId, 'sessions', activeSession.id)
+      const sessionRef = doc(db, ROOT_COLLECTIONS.ORGANIZATIONS, orgId, COLLECTIONS.CHAMADAS, activeSession.id)
 
       let presences = 0
       let absents = 0
@@ -87,13 +92,13 @@ export const attendanceService = {
             [FIELDS.MODALIDADE]: activeSession[FIELDS.MODALIDADE] || activeSession.modality || '',
             [FIELDS.DATA]: activeSession[FIELDS.DATA] || activeSession.date || '',
             isVisitor: !!student.isVisitor,
-            organizationId,
+            organizationId: orgId,
             timestamp: serverTimestamp() 
           })
 
           if (student.status === 'present' && !student.isTemporary) {
-            const collectionName = student.collectionName || (student.isVisitor ? VISITORS_COLLECTION : USERS_COLLECTION)
-            const userRef = doc(db, collectionName, String(student.id))
+            // Escopo tenant: organizations/{orgId}/usuarios/{id}
+            const userRef = doc(db, ROOT_COLLECTIONS.ORGANIZATIONS, orgId, USERS_COLLECTION, String(student.id))
             const JORNADA = FIELDS.JORNADA_TECNICA || 'jornada_tecnica'
             const AULAS = FIELDS.AULAS_DESDE_ULTIMA_GRADUACAO || 'aulas_desde_ultima_graduacao'
             batch.set(userRef, {
@@ -113,7 +118,7 @@ export const attendanceService = {
 
       batch.set(sessionRef, {
         ...activeSession,
-        organizationId,
+        organizationId: orgId,
         seqId: Number(simpleSeqId),
         presencasCount: presences,
         faltasCount: absents,
@@ -134,6 +139,7 @@ export const attendanceService = {
           `${activeSession.classTitle || 'Chamada'} — ${presences} presenças`,
           {
             ...usuarioLog,
+            organizationId: orgId,
             categoria: 'chamada',
             alvoId: activeSession.id
           }
@@ -147,9 +153,11 @@ export const attendanceService = {
     }
   },
 
-  async getSessionAttendances(sessionId, organizationId = 'rs-top-team') {
+  async getSessionAttendances(sessionId, organizationId = null) {
+    const orgId = resolverOrg(organizationId)
+    if (!orgId) return {}
     try {
-      const attendancesRef = collection(db, 'organizations', organizationId, 'sessions', sessionId, SUB_COLLECTIONS.PRESENCAS)
+      const attendancesRef = collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, orgId, COLLECTIONS.CHAMADAS, sessionId, SUB_COLLECTIONS.PRESENCAS)
       const snapshot = await getDocs(attendancesRef)
       const records = {}
 
@@ -165,10 +173,13 @@ export const attendanceService = {
     }
   },
 
-  async getLastAttendance(studentId) {
+  async getLastAttendance(studentId, organizationId = null) {
+    const orgId = resolverOrg(organizationId)
+    if (!orgId) return null
     try {
       const q = query(
         collectionGroup(db, SUB_COLLECTIONS.PRESENCAS),
+        where('organizationId', '==', orgId),
         where('studentId', '==', studentId),
         orderBy('timestamp', 'desc'),
         limit(1)
@@ -185,9 +196,11 @@ export const attendanceService = {
     }
   },
 
-  async deleteSession(sessionId, tituloSessao = null, usuarioLog = null, organizationId = 'rs-top-team') {
+  async deleteSession(sessionId, tituloSessao = null, usuarioLog = null, organizationId = null) {
+    const orgId = resolverOrg(organizationId)
+    if (!orgId) return false
     try {
-      await deleteDoc(doc(db, 'organizations', organizationId, 'sessions', sessionId))
+      await deleteDoc(doc(db, ROOT_COLLECTIONS.ORGANIZATIONS, orgId, COLLECTIONS.CHAMADAS, sessionId))
       return true
     } catch (error) {
       console.error('Erro ao deletar sessão:', error)

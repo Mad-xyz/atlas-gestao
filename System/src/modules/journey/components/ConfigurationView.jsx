@@ -6,14 +6,16 @@ import {
 } from 'lucide-react'
 import { db } from '../../../firebase/config'
 import { collection, query, getDocs, setDoc, doc, serverTimestamp } from 'firebase/firestore'
-import { COLLECTIONS } from '../../../firebase/collections'
+import { COLLECTIONS, ROOT_COLLECTIONS } from '../../../firebase/collections'
 import { beltConfig as defaultBelts } from '../../../data/beltConfig'
+import { useOrganizacao } from '../../../context/OrganizacaoContext'
 
 /**
  * Painel de Configuração de Regras de Graduação (Padrão Sênior)
  * Permite definir sequências de faixas e tempos mínimos por Modalidade e Categoria.
  */
 export default function ConfigurationView() {
+  const { organizacaoAtualId } = useOrganizacao()
   const [modalities, setModalities] = useState([])
   const [selectedModality, setSelectedModality] = useState(null)
   const [selectedCategory, setSelectedCategory] = useState('Adulto')
@@ -27,14 +29,15 @@ export default function ConfigurationView() {
   // Busca modalidades e configurações existentes no Firestore
   useEffect(() => {
     async function fetchData() {
+      if (!organizacaoAtualId) return
       setLoading(true)
       try {
-        const modSnap = await getDocs(collection(db, COLLECTIONS.MODALIDADES))
+        const modSnap = await getDocs(collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.MODALIDADES))
         const mods = modSnap.docs.map(d => ({ id: d.id, ...d.data() }))
         setModalities(mods)
         if (mods.length > 0) setSelectedModality(mods[0])
 
-        const confSnap = await getDocs(collection(db, COLLECTIONS.CONFIGURACOES_JORNADA))
+        const confSnap = await getDocs(collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.CONFIGURACOES))
         const confData = {}
         confSnap.forEach(d => { confData[d.id] = d.data() })
         setConfigs(confData)
@@ -45,7 +48,7 @@ export default function ConfigurationView() {
       }
     }
     fetchData()
-  }, [])
+  }, [organizacaoAtualId])
 
   // Gerencia o estado local das configurações (Edição)
   const currentKey = selectedModality ? `${selectedModality.id}_${selectedCategory}` : ''
@@ -87,10 +90,10 @@ export default function ConfigurationView() {
   }
 
   const saveConfiguration = async () => {
-    if (!selectedModality) return
+    if (!selectedModality || !organizacaoAtualId) return
     setSaving(true)
     try {
-      await setDoc(doc(db, COLLECTIONS.CONFIGURACOES_JORNADA, currentKey), {
+      await setDoc(doc(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLLECTIONS.CONFIGURACOES, currentKey), {
         modalityId: selectedModality.id,
         modalityName: selectedModality.name,
         category: selectedCategory,

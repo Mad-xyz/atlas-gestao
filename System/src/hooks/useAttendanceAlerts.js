@@ -1,21 +1,25 @@
 import { useState, useEffect } from 'react';
 import { db } from '../firebase/config';
 import { 
-  collection, 
+  collectionGroup, 
   query, 
   where, 
   getDocs,
   Timestamp 
 } from 'firebase/firestore';
-import { COLLECTIONS } from '../firebase/collections';
+import { SUB_COLLECTIONS } from '../firebase/collections';
+import { useOrganizacao } from '../context/OrganizacaoContext';
 
 /**
  * Hook de Assiduidade - Versão "No-Index" (Ultra Compatível)
  * 
- * Para evitar a necessidade de criar índices compostos manualmente no Firebase Console,
- * esta versão faz a filtragem básica no servidor e a lógica de ordenação/contagem no cliente.
+ * MULTI-TENANT: consulta a subcoleção `presencas` (via collectionGroup) filtrando
+ * pela organização ativa. Para evitar a necessidade de criar índices compostos
+ * manualmente no Firebase Console, a filtragem básica é feita no servidor e a
+ * lógica de ordenação/contagem no cliente.
  */
 export function useAttendanceAlerts(studentId, createdAt = null) {
+  const { organizacaoAtualId } = useOrganizacao();
   const [status, setStatus] = useState('loading');
   const [lastAttendance, setLastAttendance] = useState(null);
   const [monthlyCount, setMonthlyCount] = useState(0);
@@ -23,7 +27,7 @@ export function useAttendanceAlerts(studentId, createdAt = null) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!studentId) {
+    if (!studentId || !organizacaoAtualId) {
       setIsLoading(false);
       return;
     }
@@ -34,11 +38,10 @@ export function useAttendanceAlerts(studentId, createdAt = null) {
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         
-        const logRef = collection(db, COLLECTIONS.PRESENCAS_LOG);
-
-        // BUSCA SIMPLIFICA: Apenas por studentId (não requer índice composto)
+        // MULTI-TENANT: collectionGroup 'presencas' filtrado pela organização ativa
         const q = query(
-          logRef,
+          collectionGroup(db, SUB_COLLECTIONS.PRESENCAS),
+          where('organizationId', '==', organizacaoAtualId),
           where('studentId', '==', studentId)
         );
         
@@ -52,7 +55,7 @@ export function useAttendanceAlerts(studentId, createdAt = null) {
         // PROCESSAMENTO NO CLIENTE (Mais estável para o desenvolvedor)
         const allAttendances = snapshot.docs.map(doc => {
           const data = doc.data()
-          const d = data.date
+          const d = data.date || data.data
           const dateObj = d instanceof Timestamp ? d.toDate() : (d?.toDate ? d.toDate() : new Date(d))
           return { date: dateObj, status: data.status || 'present' }
         }).filter(r => !isNaN(r.date?.getTime()))
@@ -104,7 +107,7 @@ export function useAttendanceAlerts(studentId, createdAt = null) {
     }
 
     fetchData();
-  }, [studentId, createdAt]);
+  }, [studentId, createdAt, organizacaoAtualId]);
 
   return { status, lastAttendance, monthlyCount, consecutiveMisses, isLoading };
 }

@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RS Top Team · Multi-Tenant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ─── TOKENS ─── */
+:root {
+  --clr-primary:      #E11D48;
+  --clr-primary-dark: #9F1239;
+  --clr-primary-rgb:  225, 29, 72;
+  --clr-bg:           #08080B;
+  --clr-surface:      #0F0F12;
+  --clr-surface-2:    #141418;
+  --clr-surface-3:    #1A1A1F;
+  --clr-text:         #FFFFFF;
+  --clr-text-muted:   #9CA3AF;
+  --clr-border:       rgba(255,255,255,0.06);
+  --clr-glass:        rgba(255,255,255,0.03);
+  --clr-success:      #10B981;
+  --clr-danger:       #F43F5E;
+  --clr-warning:      #F59E0B;
+  --clr-info:         #3B82F6;
+  --clr-purple:       #8B5CF6;
+  --clr-orange:       #F97316;
+  --radius:           12px;
+  --radius-sm:        8px;
+  --transition:       0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:'Inter', sans-serif;
+  background:var(--clr-bg);
+  color:var(--clr-text);
+  min-height:100vh;
+  display:flex;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ─── SIDEBAR ─── */
+.sidebar {
+  width:72px;
+  background:var(--clr-surface);
+  border-right:1px solid var(--clr-border);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:20px 0;
+  gap:8px;
+  position:fixed;
+  top:0;left:0;bottom:0;
+  z-index:100;
+}
+.sidebar-logo {
+  width:40px;height:40px;
+  background:var(--clr-primary);
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:16px;
+  margin-bottom:16px;
+}
+.sidebar a {
+  width:44px;height:44px;
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--clr-text-muted);
+  text-decoration:none;
+  transition:var(--transition);
+  font-size:18px;
+  position:relative;
+}
+.sidebar a:hover, .sidebar a.active {
+  background:rgba(var(--clr-primary-rgb),0.12);
+  color:var(--clr-primary);
+}
+.sidebar a.active::before {
+  content:'';position:absolute;left:-1px;top:50%;translate:0 -50%;
+  width:3px;height:20px;border-radius:0 3px 3px 0;background:var(--clr-primary);
+}
+
+/* ─── MAIN ─── */
+.main {
+  margin-left:72px;
+  flex:1;
+  padding:32px 40px 60px;
+  max-width:1440px;
+}
+
+/* ─── HEADER ─── */
+.header {
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:32px;
+}
+.header-left h1 {
+  font-size:22px;font-weight:700;letter-spacing:-0.3px;
+}
+.header-left p {
+  font-size:13px;color:var(--clr-text-muted);margin-top:4px;
+}
+.header-right {
+  display:flex;align-items:center;gap:16px;
+}
+.header-date {
+  font-size:13px;color:var(--clr-text-muted);
+  padding:8px 14px;
+  background:var(--clr-surface);
+  border:1px solid var(--clr-border);
+  border-radius:var(--radius-sm);
+}
+.header-avatar {
+  width:36px;height:36px;
+  border-radius:50%;
+  background:var(--clr-surface-2);
+  border:2px solid var(--clr-border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:600;
+}
+
+/* ─── GRID ─── */
+.grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+
+/* ─── CARDS ─── */
+.card {
+  background:var(--clr-surface);
+  border:1px solid var(--clr-border);
+  border-radius:var(--radius);
+  padding:20px;
+  transition:var(--transition);
+}
+.card:hover { border-color:rgba(var(--clr-primary-rgb),0.15); }
+
+.card-header {
+  display:flex;justify-content:space-between;align-items:flex-start;
+  margin-bottom:12px;
+}
+.card-label {
+  font-size:12px;font-weight:500;color:var(--clr-text-muted);
+  text-transform:uppercase;letter-spacing:0.5px;
+}
+.card-icon {
+  width:36px;height:36px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;
+  flex-shrink:0;
+}
+.card-value {
+  font-size:28px;font-weight:800;letter-spacing:-0.5px;
+  margin-bottom:4px;
+}
+.card-change {
+  font-size:12px;font-weight:600;
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px;
+  border-radius:4px;
+}
+.card-change.up { color:var(--clr-success); background:rgba(16,185,129,0.1); }
+.card-change.down { color:var(--clr-danger); background:rgba(244,63,94,0.1); }
+.card-change.neutral { color:var(--clr-text-muted); background:rgba(156,163,175,0.08); }
+
+/* ─── SECTION TITLE ─── */
+.section {
+  margin-top:28px;
+  margin-bottom:16px;
+}
+.section-title {
+  font-size:14px;font-weight:600;color:var(--clr-text-muted);
+  text-transform:uppercase;letter-spacing:0.5px;
+}
+.section:first-of-type { margin-top:0; }
+
+/* ─── CHARTS ─── */
+.chart-wrap { padding:4px 0 0; }
+.chart-wrap canvas { width:100% !important; height:240px !important; display:block; }
+
+/* ─── TABLE ─── */
+.table-wrap { overflow-x:auto; }
+table {
+  width:100%;border-collapse:collapse;
+  font-size:13px;
+}
+thead th {
+  text-align:left;
+  padding:12px 16px;
+  font-weight:600;font-size:11px;color:var(--clr-text-muted);
+  text-transform:uppercase;letter-spacing:0.5px;
+  border-bottom:1px solid var(--clr-border);
+}
+tbody td {
+  padding:14px 16px;
+  border-bottom:1px solid var(--clr-border);
+  vertical-align:middle;
+}
+tbody tr:last-child td { border-bottom:none; }
+tbody tr:hover { background:var(--clr-glass); }
+.tenant-info { display:flex;align-items:center;gap:10px; }
+.tenant-avatar {
+  width:32px;height:32px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:12px;flex-shrink:0;
+}
+.tenant-name { font-weight:600;font-size:13px; }
+.tenant-plan { font-size:11px;color:var(--clr-text-muted);margin-top:2px; }
+.status-badge {
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 10px;border-radius:6px;
+  font-size:11px;font-weight:600;
+}
+.status-badge.active { background:rgba(16,185,129,0.1); color:var(--clr-success); }
+.status-badge.risk { background:rgba(245,158,11,0.1); color:var(--clr-warning); }
+.status-badge.blocked { background:rgba(244,63,94,0.1); color:var(--clr-danger); }
+.status-dot { width:6px;height:6px;border-radius:50%; }
+.status-dot.active { background:var(--clr-success); }
+.status-dot.risk { background:var(--clr-warning); }
+.status-dot.blocked { background:var(--clr-danger); }
+
+/* ─── INSIGHTS ─── */
+.insights-grid {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:16px;
+}
+.insight-card {
+  background:var(--clr-surface);
+  border:1px solid var(--clr-border);
+  border-radius:var(--radius);
+  padding:20px;
+  display:flex;gap:14px;align-items:flex-start;
+  transition:var(--transition);
+}
+.insight-card:hover { border-color:rgba(var(--clr-primary-rgb),0.15); }
+.insight-icon {
+  width:40px;height:40px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0;
+}
+.insight-text { flex:1; }
+.insight-title {
+  font-size:12px;font-weight:700;margin-bottom:4px;
+}
+.insight-desc {
+  font-size:12px;color:var(--clr-text-muted);line-height:1.5;
+}
+.insight-action {
+  display:inline-flex;align-items:center;gap:4px;
+  margin-top:8px;font-size:11px;font-weight:600;
+  color:var(--clr-primary);text-decoration:none;
+  cursor:pointer;transition:var(--transition);
+}
+.insight-action:hover { opacity:0.8; }
+
+/* ─── ICONS (inline SVG mimic) ─── */
+.icon-lg { font-size:20px; }
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:1024px){
+  .grid-4 { grid-template-columns:repeat(2,1fr); }
+  .grid-2 { grid-template-columns:1fr; }
+  .insights-grid { grid-template-columns:repeat(2,1fr); }
+}
+@media(max-width:640px){
+  .main { padding:20px 16px 40px; }
+  .sidebar { width:56px; }
+  .sidebar a { width:36px;height:36px;font-size:15px; }
+  .sidebar-logo { width:32px;height:32px;font-size:13px; }
+  .main { margin-left:56px; }
+  .grid-4 { grid-template-columns:1fr 1fr; gap:10px; }
+  .insights-grid { grid-template-columns:1fr; }
+  .card-value { font-size:22px; }
+  .header { flex-direction:column;align-items:flex-start;gap:12px; }
+}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--clr-surface-3); border-radius:3px; }
+::-webkit-scrollbar-thumb:hover { background:var(--clr-text-muted); }
+</style>
+</head>
+<body>
+
+<!-- ─── SIDEBAR ─── -->
+<nav class="sidebar">
+  <div class="sidebar-logo">RS</div>
+  <a href="#" class="active" title="Dashboard">📊</a>
+  <a href="#" title="Academias">🏢</a>
+  <a href="#" title="Alunos">👥</a>
+  <a href="#" title="Pagamentos">💰</a>
+  <a href="#" title="Relatórios">📈</a>
+  <a href="#" title="Config">⚙️</a>
+</nav>
+
+<!-- ─── MAIN ─── -->
+<div class="main">
+
+  <!-- ─── HEADER ─── -->
+  <header class="header">
+    <div class="header-left">
+      <h1>Multi-Tenant</h1>
+      <p>Dashboard executivo · RS Top Team</p>
+    </div>
+    <div class="header-right">
+      <span class="header-date" id="headerDate">Carregando...</span>
+      <div class="header-avatar">AD</div>
+    </div>
+  </header>
+
+  <!-- ════════════════════════════════════════════════ -->
+  <!-- LINHA 1 — Financeiro & Escala                    -->
+  <!-- ════════════════════════════════════════════════════ -->
+  <div class="section"><div class="section-title">Financeiro &amp; Escala</div></div>
+  <div class="grid-4" id="finMetrics">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-label">Receita do Mês</span>
+        <div class="card-icon" style="background:rgba(var(--clr-primary-rgb),0.12);color:var(--clr-primary);">💰</div>
+      </div>
+      <div class="card-value" id="finRevenue">—</div>
+      <span class="card-change up" id="finRevenueChange">↑ —%</span>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-label">Alunos Ativos</span>
+        <div class="card-icon" style="background:rgba(59,130,246,0.12);color:#3B82F6;">👥</div>
+      </div>
+      <div class="card-value" id="finStudents">—</div>
+      <span class="card-change up" id="finStudentsChange">↑ —%</span>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-label">Inadimplentes</span>
+        <div class="card-icon" style="background:rgba(244,63,94,0.12);color:var(--clr-danger);">⚠️</div>
+      </div>
+      <div class="card-value" id="finDelinquent">—</div>
+      <span class="card-change down" id="finDelinquentChange">↓ —%</span>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-label">Taxa de Presença</span>
+        <div class="card-icon" style="background:rgba(16,185,129,0.12);color:var(--clr-success);">📊</div>
+      </div>
+      <div class="card-value" id="finAttendance">—</div>
+      <span class="card-change up" id="finAttendanceChange">↑ —%</span>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════ -->
+  <!-- LINHA 2 — Gráficos                                 -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <div class="section"><div class="section-title">Evolução</div></div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-label">Receita — Últimos 12 Meses</span>
+        <span style="font-size:11px;color:var(--clr-text-muted);">MRR acumulado</span>
+      </div>
+      <div class="chart-wrap"><canvas id="chartRevenue"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-label">Crescimento de Alunos</span>
+        <span style="font-size:11px;color:var(--clr-text-muted);">Total ao longo do ano</span>
+      </div>
+      <div class="chart-wrap"><canvas id="chartStudents"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════ -->
+  <!-- LINHA 3 — Saúde dos Tenants                        -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <div class="section"><div class="section-title">Saúde dos Tenants</div></div>
+  <div class="grid-4" id="tenantMetrics">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-label">Academias Ativas</span>
+        <div class="card-icon" style="background:rgba(16,185,129,0.12);color:var(--clr-success);">🏢</div>
+      </div>
+      <div class="card-value" id="tenantActive">—</div>
+      <span class="card-change up">✅ Faturando este mês</span>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-label">Em Risco</span>
+        <div class="card-icon" style="background:rgba(245,158,11,0.12);color:var(--clr-warning);">⚠️</div>
+      </div>
+      <div class="card-value" id="tenantRisk">—</div>
+      <span class="card-change neutral" id="tenantRiskDetail">15+ dias sem acesso</span>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-label">Bloqueadas</span>
+        <div class="card-icon" style="background:rgba(244,63,94,0.12);color:var(--clr-danger);">🔒</div>
+      </div>
+      <div class="card-value" id="tenantBlocked">—</div>
+      <span class="card-change neutral" id="tenantBlockedDetail">Pagamento pendente</span>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-label">Novas Academias</span>
+        <div class="card-icon" style="background:rgba(139,92,246,0.12);color:var(--clr-purple);">✨</div>
+      </div>
+      <div class="card-value" id="tenantNew">—</div>
+      <span class="card-change up" id="tenantNewChange">↑ Este mês</span>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════ -->
+  <!-- LINHA 4 — Top 10 Academias                         -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <div class="section"><div class="section-title">Top 10 Academias</div></div>
+  <div class="card" style="padding:0;">
+    <div class="table-wrap">
+      <table id="topTable">
+        <thead>
+          <tr>
+            <th>Academia</th>
+            <th style="text-align:center;">Alunos</th>
+            <th style="text-align:center;">Receita</th>
+            <th style="text-align:center;">Inadimplência</th>
+            <th>Status</th>
+            <th style="text-align:center;">Acesso</th>
+          </tr>
+        </thead>
+        <tbody id="topTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════ -->
+  <!-- LINHA 5 — IA Insights (ACIONÁVEIS)                -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <div class="section"><div class="section-title">🤖 IA Insights · O que fazer</div></div>
+  <div class="insights-grid" id="insightsGrid"></div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// DADOS SINTÉTICOS (simula Firestore)
+// ═══════════════════════════════════════════════════════════
+
+const MONTHS = ['Set','Out','Nov','Dez','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago'];
+
+const DATA = {
+  monthlyRevenue: [42200, 45600, 48300, 51100, 53800, 56200, 59100, 62400, 65800, 71200, 76800, 89400],
+  monthlyStudents: [820, 890, 950, 1020, 1080, 1140, 1220, 1310, 1400, 1510, 1630, 1847],
+  currentMonthRevenue: 89400,
+  prevMonthRevenue: 76800,
+  currentStudents: 1847,
+  prevStudents: 1630,
+  delinquent: 143,
+  prevDelinquent: 155,
+  attendance: 87,
+  prevAttendance: 84,
+  tenants: {
+    active: 81,
+    risk: 4,
+    blocked: 2,
+    new: 13
+  },
+  topTenants: [
+    { name:'Team Alpha', plan:'Plano Pro', students:247, revenue:12400, delinquent:18, status:'active', lastAccess:'Hoje 08:23', color:'#E11D48' },
+    { name:'Iron Gym', plan:'Plano Premium', students:203, revenue:15800, delinquent:12, status:'active', lastAccess:'Hoje 07:45', color:'#3B82F6' },
+    { name:'CT Maximus', plan:'Plano Pro', students:178, revenue:8900, delinquent:21, status:'active', lastAccess:'Ontem 18:30', color:'#10B981' },
+    { name:'Body Factory', plan:'Plano Básico', students:155, revenue:6200, delinquent:8, status:'risk', lastAccess:'Há 12 dias', color:'#F59E0B' },
+    { name:'King Boxe', plan:'Plano Pro', students:142, revenue:7100, delinquent:9, status:'active', lastAccess:'Hoje 06:50', color:'#8B5CF6' },
+    { name:'Elite Fit', plan:'Plano Premium', students:128, revenue:10200, delinquent:5, status:'active', lastAccess:'Hoje 09:10', color:'#F97316' },
+    { name:'Power Gym', plan:'Plano Básico', students:115, revenue:5200, delinquent:14, status:'blocked', lastAccess:'Há 28 dias', color:'#F43F5E' },
+    { name:'Forja Cross', plan:'Plano Pro', students:98, revenue:4900, delinquent:7, status:'active', lastAccess:'Ontem 20:15', color:'#06B6D4' },
+    { name:'Templo Fit', plan:'Plano Básico', students:87, revenue:4100, delinquent:11, status:'risk', lastAccess:'Há 16 dias', color:'#EC4899' },
+    { name:'Hard Training', plan:'Plano Pro', students:76, revenue:3800, delinquent:4, status:'active', lastAccess:'Hoje 05:30', color:'#84CC16' }
+  ]
+};
+
+// ═══════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════
+
+function fmtCurrency(v) {
+  return 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function fmtChange(up, pct) {
+  const arrow = up ? '↑' : '↓';
+  const cls = up ? 'up' : 'down';
+  return `<span class="card-change ${cls}">${arrow} ${pct.toFixed(1)}%</span>`;
+}
+
+// LINHA 1 — Financeiro
+document.getElementById('finRevenue').textContent = fmtCurrency(DATA.currentMonthRevenue);
+document.getElementById('finRevenueChange').innerHTML = ((DATA.currentMonthRevenue/DATA.prevMonthRevenue-1)*100).toFixed(1) + '%';
+
+document.getElementById('finStudents').textContent = DATA.currentStudents.toLocaleString();
+document.getElementById('finStudentsChange').innerHTML = ((DATA.currentStudents/DATA.prevStudents-1)*100).toFixed(1) + '%';
+
+document.getElementById('finDelinquent').textContent = DATA.delinquent.toLocaleString();
+const delPct = ((DATA.prevDelinquent/DATA.delinquent-1)*100);
+document.getElementById('finDelinquentChange').innerHTML = delPct.toFixed(1) + '%';
+
+document.getElementById('finAttendance').textContent = DATA.attendance + '%';
+document.getElementById('finAttendanceChange').innerHTML = ((DATA.attendance/DATA.prevAttendance-1)*100).toFixed(1) + '%';
+
+// LINHA 3 — Tenants
+document.getElementById('tenantActive').textContent = DATA.tenants.active;
+document.getElementById('tenantRisk').textContent = DATA.tenants.risk;
+document.getElementById('tenantBlocked').textContent = DATA.tenants.blocked;
+document.getElementById('tenantNew').textContent = DATA.tenants.new;
+
+// LINHA 4 — Tabela
+const tbody = document.getElementById('topTableBody');
+DATA.topTenants.forEach(t => {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>
+      <div class="tenant-info">
+        <div class="tenant-avatar" style="background:${t.color}20;color:${t.color};">${t.name.split(' ').map(w=>w[0]).join('')}</div>
+        <div>
+          <div class="tenant-name">${t.name}</div>
+          <div class="tenant-plan">${t.plan}</div>
+        </div>
+      </div>
+    </td>
+    <td style="text-align:center;font-weight:600;">${t.students}</td>
+    <td style="text-align:center;font-weight:700;">${fmtCurrency(t.revenue)}</td>
+    <td style="text-align:center;color:${t.delinquent > 15 ? 'var(--clr-danger)' : t.delinquent > 8 ? 'var(--clr-warning)' : 'var(--clr-text-muted)'};">${t.delinquent} (${(t.delinquent/t.students*100).toFixed(1)}%)</td>
+    <td>
+      <span class="status-badge ${t.status}">
+        <span class="status-dot ${t.status}"></span>
+        ${t.status === 'active' ? 'Ativo' : t.status === 'risk' ? 'Em Risco' : 'Bloqueada'}
+      </span>
+    </td>
+    <td style="text-align:center;font-size:12px;color:var(--clr-text-muted);">${t.lastAccess}</td>
+  `;
+  tbody.appendChild(tr);
+});
+
+// LINHA 5 — Insights
+const insights = [
+  {
+    icon: '⚠️', iconBg: 'rgba(245,158,11,0.12)', iconColor: 'var(--clr-warning)',
+    title: 'Jiu-Jitsu em queda',
+    desc: 'A frequência do Jiu-Jitsu caiu 18% nos últimos 30 dias. 3 academias com menos de 50% de presença na modalidade.',
+    action: 'Ver academias afetadas'
+  },
+  {
+    icon: '🔴', iconBg: 'rgba(244,63,94,0.12)', iconColor: 'var(--clr-danger)',
+    title: '4 academias podem cancelar',
+    desc: 'Body Factory, Templo Fit e outras 2 estão há 15+ dias sem acesso ao sistema. Risco alto de churn no próximo mês.',
+    action: 'Acionar equipe de sucesso'
+  },
+  {
+    icon: '📈', iconBg: 'rgba(16,185,129,0.12)', iconColor: 'var(--clr-success)',
+    title: 'Plano Pro acelerou',
+    desc: 'Plano Pro cresceu 22% este mês — 7 academias fizeram upgrade. Receita média por academia subiu para R$ 1.104.',
+    action: 'Ver detalhes dos upgrades'
+  },
+  {
+    icon: '💰', iconBg: 'rgba(59,130,246,0.12)', iconColor: '#3B82F6',
+    title: 'Projeção para Setembro',
+    desc: 'Com a tendência atual, a receita prevista para Setembro é de R$ 97.200 (+9%). Faltam 8 academias para bater a meta do trimestre.',
+    action: 'Ver projeção completa'
+  }
+];
+
+const grid = document.getElementById('insightsGrid');
+insights.forEach(ins => {
+  const div = document.createElement('div');
+  div.className = 'insight-card';
+  div.innerHTML = `
+    <div class="insight-icon" style="background:${ins.iconBg};color:${ins.iconColor};">${ins.icon}</div>
+    <div class="insight-text">
+      <div class="insight-title">${ins.title}</div>
+      <div class="insight-desc">${ins.desc}</div>
+      <a class="insight-action" href="#">${ins.action} →</a>
+    </div>
+  `;
+  grid.appendChild(div);
+});
+
+// ═══════════════════════════════════════════════════════════
+// GRÁFICOS (Canvas)
+// ═══════════════════════════════════════════════════════════
+
+function drawRevenueChart() {
+  const canvas = document.getElementById('chartRevenue');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const W = rect.width;
+  const H = 240;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+
+  const pad = { top:20, bottom:30, left:50, right:20 };
+  const cw = W - pad.left - pad.right;
+  const ch = H - pad.top - pad.bottom;
+  const data = DATA.monthlyRevenue;
+  const max = Math.max(...data) * 1.12;
+  const min = 0;
+  const range = max - min;
+
+  // Fundo
+  ctx.clearRect(0,0,W,H);
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for(let i=0;i<=4;i++) {
+    const y = pad.top + (ch * i/4);
+    ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(W-pad.right,y); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.font = '10px Inter';
+    ctx.textAlign = 'right';
+    ctx.fillText(fmtCurrency(max - range * i/4), pad.left-8, y+3);
+  }
+
+  // Area fill
+  ctx.beginPath();
+  ctx.moveTo(pad.left, pad.top + ch);
+  data.forEach((v,i) => {
+    const x = pad.left + (cw * i/(data.length-1));
+    const y = pad.top + ch - ((v-min)/range * ch);
+    i === 0 ? ctx.lineTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.lineTo(pad.left + cw, pad.top + ch);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0,pad.top,0,pad.top+ch);
+  grad.addColorStop(0, 'rgba(225,29,72,0.35)');
+  grad.addColorStop(1, 'rgba(225,29,72,0.02)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  data.forEach((v,i) => {
+    const x = pad.left + (cw * i/(data.length-1));
+    const y = pad.top + ch - ((v-min)/range * ch);
+    i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.strokeStyle = '#E11D48';
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  // Dots
+  data.forEach((v,i) => {
+    const x = pad.left + (cw * i/(data.length-1));
+    const y = pad.top + ch - ((v-min)/range * ch);
+    ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2);
+    ctx.fillStyle = '#E11D48';
+    ctx.fill();
+  });
+
+  // Labels
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font = '10px Inter';
+  ctx.textAlign = 'center';
+  data.forEach((v,i) => {
+    const x = pad.left + (cw * i/(data.length-1));
+    ctx.fillText(MONTHS[i], x, pad.top+ch+20);
+  });
+}
+
+function drawStudentsChart() {
+  const canvas = document.getElementById('chartStudents');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const W = rect.width;
+  const H = 240;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+
+  const pad = { top:20, bottom:30, left:50, right:20 };
+  const cw = W - pad.left - pad.right;
+  const ch = H - pad.top - pad.bottom;
+  const data = DATA.monthlyStudents;
+  const max = Math.max(...data) * 1.12;
+  const min = 0;
+  const range = max - min;
+  const barW = cw / data.length * 0.6;
+  const gap = cw / data.length;
+
+  ctx.clearRect(0,0,W,H);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for(let i=0;i<=4;i++) {
+    const y = pad.top + (ch * i/4);
+    ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(W-pad.right,y); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.font = '10px Inter';
+    ctx.textAlign = 'right';
+    ctx.fillText(Math.round(max - range * i/4).toLocaleString(), pad.left-8, y+3);
+  }
+
+  // Bars
+  data.forEach((v,i) => {
+    const x = pad.left + gap * i + (gap - barW)/2;
+    const h = ((v-min)/range) * ch;
+    const y = pad.top + ch - h;
+    const grad = ctx.createLinearGradient(0,y,0,pad.top+ch);
+    grad.addColorStop(0, 'rgba(59,130,246,0.8)');
+    grad.addColorStop(1, 'rgba(59,130,246,0.15)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.roundRect(x, y, barW-2, h, [3,3,0,0]);
+    ctx.fill();
+  });
+
+  // Labels
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font = '10px Inter';
+  ctx.textAlign = 'center';
+  data.forEach((v,i) => {
+    const x = pad.left + gap * i + gap/2;
+    ctx.fillText(MONTHS[i], x, pad.top+ch+20);
+  });
+}
+
+drawRevenueChart();
+drawStudentsChart();
+
+// ═══════════════════════════════════════════════════════════
+// HEADER DATE
+// ═══════════════════════════════════════════════════════════
+
+function updateDate() {
+  const d = new Date();
+  const opts = { weekday:'long', day:'numeric', month:'long', year:'numeric' };
+  document.getElementById('headerDate').textContent = d.toLocaleDateString('pt-BR', opts);
+}
+updateDate();
+
+// ═══════════════════════════════════════════════════════════
+// RESIZE
+// ═══════════════════════════════════════════════════════════
+
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => { drawRevenueChart(); drawStudentsChart(); }, 200);
+});
+</script>
+</body>
+</html>

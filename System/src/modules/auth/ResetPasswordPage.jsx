@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { verifyPasswordResetCode, confirmPasswordReset } from 'firebase/auth'
 import { auth, db } from '../../firebase/config'
 import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore'
-import { COLLECTIONS } from '../../firebase/collections'
+import { ROOT_COLLECTIONS } from '../../firebase/collections'
 import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -58,13 +58,13 @@ export default function ResetPasswordPage() {
 
       // 2. Sincronizar com o Firestore para aparecer nas tabelas
       if (email) {
-        const usersRef = collection(db, COLLECTIONS.USUARIOS)
+        const usersRef = collection(db, ROOT_COLLECTIONS.USUARIOS_GLOBAIS)
         const q = query(usersRef, where('email', '==', email))
         const querySnapshot = await getDocs(q)
         
         if (!querySnapshot.empty) {
           const userDoc = querySnapshot.docs[0]
-          await updateDoc(doc(db, COLLECTIONS.USUARIOS, userDoc.id), {
+          await updateDoc(doc(db, ROOT_COLLECTIONS.USUARIOS_GLOBAIS, userDoc.id), {
             pin: newPin // Atualiza o PIN visível no painel
           })
         }
@@ -191,7 +191,7 @@ export default function ResetPasswordPage() {
         
         {/* Footer info */}
         <p className="text-center text-[10px] text-gray-700 mt-8 uppercase tracking-[0.3em] font-bold">
-          Rs TOP TEAM &copy; 2026
+          Atlas Academy &copy; 2026
         </p>
       </motion.div>
     </div>

@@ -1,4 +1,4 @@
-// RESUMO: Shell principal da aplicação RS Top Team.
+// RESUMO: Shell principal da aplicação Atlas Academy.
 // Gerencia o roteamento, provedores de contexto (Auth, Theme, App),
 // barra lateral, navegação mobile e proteção de rotas por perfis de acesso.
 import React, { useState, useEffect, lazy, Suspense } from 'react'
@@ -42,7 +42,8 @@ const ModalitiesPage = lazy(() => import('./modules/modalities/ModalitiesPage'))
 const BillingPage = lazy(() => import('./modules/finance/BillingPage'))   // Cobrança
 const ExpensesPage = lazy(() => import('./modules/finance/ExpensesPage'))  // Despesas
 const ReportsPage = lazy(() => import('./modules/finance/ReportsPage'))   // Relatórios Financeiros
-const RSAdminRegister = lazy(() => import('./modules/auth/RSAdminRegister'))
+const AdminEntry = lazy(() => import('./modules/auth/AdminEntry'))
+const PainelSuperAdmin = lazy(() => import('./modules/admin/PainelSuperAdmin'))
 // ─── ScrollToTop Helper ───────────────────────────────────────────────────────
 function ScrollToTop() {
   const { pathname, search } = useLocation()
@@ -119,7 +120,7 @@ function AppContent() {
   })
 
   // 1. PÁGINAS PÚBLICAS: Telas de autenticação que não requerem login.
-  const isAuthPage = ['/login', '/rsadmin'].includes(location.pathname)
+  const isAuthPage = ['/login', '/admin-entry'].includes(location.pathname)
 
   // 0. CARREGAMENTO: Enquanto verifica auth/setup, evitamos tela preta e redirects precipitados.
   if (authLoading) {
@@ -142,7 +143,7 @@ function AppContent() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/recuperar-senha" element={<ResetPasswordPage />} />
-          <Route path="/rsadmin" element={<RSAdminRegister />} />
+          <Route path="/admin-entry" element={<AdminEntry />} />
         </Routes>
       </Suspense>
     )
@@ -206,6 +207,8 @@ function AppContent() {
                     <Route path="/visitantes" element={<ProtectedRoute><AnimatedPage><StudentsPage defaultTypeFilter="visitante" /></AnimatedPage></ProtectedRoute>} />
 
                     <Route path="/modalidades" element={<ProtectedRoute requiredPermission="manageSystem"><AnimatedPage><ModalitiesPage /></AnimatedPage></ProtectedRoute>} />
+
+                    <Route path="/admin" element={<ProtectedRoute allowedRoles={['superAdmin']}><AnimatedPage><PainelSuperAdmin /></AnimatedPage></ProtectedRoute>} />
 
                     <Route path="/planos" element={<ProtectedRoute><AnimatedPage><ModuleUnderDevelopment
                       icon={Banknote} title="Planos"

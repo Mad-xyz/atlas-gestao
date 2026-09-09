@@ -1,11 +1,10 @@
 import { useState, useEffect, useMemo } from 'react'
 import { db } from '../firebase/config'
 import { 
-  collection, query, onSnapshot, 
+  collection, query, where, onSnapshot, 
   setDoc, doc, updateDoc, deleteDoc, 
   serverTimestamp, collectionGroup, arrayUnion 
 } from 'firebase/firestore'
-import { COLLECTIONS, SUB_COLLECTIONS } from '../firebase/collections'
 import { useOrganizacao } from '../context/OrganizacaoContext'
 
 let _cachedModalities = null
@@ -23,45 +22,34 @@ export function useModalities() {
 
     setLoading(true)
 
-    // Referência para modalidades escopadas na organização ativa
-    const refModalidades = collection(db, 'organizations', organizacaoAtualId, 'modalities')
+    // Referência para modalidades escopadas na organização ativa (tenant-scoped)
+    const refModalidades = collection(db, 'organizations', organizacaoAtualId, 'modalidades')
 
     const unsubMods = onSnapshot(refModalidades, (snap) => {
-      if (!snap.empty) {
-        const data = snap.docs.map(d => ({ 
-          id: d.id, 
-          ...d.data(),
-          _sortKey: d.data().createdAt?.toMillis() || Date.now()
-        }))
-        data.sort((a, b) => b._sortKey - a._sortKey)
-        _cachedModalities = data
-        setModalities(data)
-        setLoading(false)
-      } else {
-        // Fallback para coleção global legada
-        const qGlobal = collection(db, COLLECTIONS.MODALIDADES)
-        onSnapshot(qGlobal, (snapGlobal) => {
-          const dataGlobal = snapGlobal.docs.map(d => ({ id: d.id, ...d.data() }))
-          setModalities(dataGlobal)
-          setLoading(false)
-        }, () => setLoading(false))
-      }
-    }, () => {
-      // Fallback em caso de indisponibilidade
-      const qGlobal = collection(db, COLLECTIONS.MODALIDADES)
-      onSnapshot(qGlobal, (snapGlobal) => {
-        const dataGlobal = snapGlobal.docs.map(d => ({ id: d.id, ...d.data() }))
-        setModalities(dataGlobal)
-        setLoading(false)
-      }, () => setLoading(false))
+      const data = snap.docs.map(d => ({
+        id: d.id,
+        ...d.data(),
+        _sortKey: d.data().createdAt?.toMillis() || Date.now()
+      }))
+      data.sort((a, b) => b._sortKey - a._sortKey)
+      _cachedModalities = data
+      setModalities(data)
+      setLoading(false)
+    }, (err) => {
+      console.warn('⚠️ Erro ao escutar modalidades da organização:', err)
+      setModalities([])
+      setLoading(false)
     })
 
-    // Monitor de turmas (collectionGroup ou subcoleção)
-    const qTurmas = collectionGroup(db, SUB_COLLECTIONS.TURMAS)
+    // Monitor de turmas escopado pela organização ativa (filtro de tenant)
+    const qTurmas = query(
+      collectionGroup(db, 'turmas'),
+      where('organizationId', '==', organizacaoAtualId)
+    )
     const unsubTurmas = onSnapshot(qTurmas, (snap) => {
       const data = snap.docs.map(d => ({
         id: d.id,
-        modalityId: d.ref.parent.parent?.id,
+        modalityId: d.data().modalityId || d.ref.parent.parent?.id,
         ...d.data()
       }))
       _cachedTurmas = data
@@ -123,7 +111,7 @@ export function useModalities() {
       .replace(/\s+/g, '-')
       .replace(/[^\w-]/g, '')
     
-    const modRef = doc(db, 'organizations', organizacaoAtualId, 'modalities', slug)
+    const modRef = doc(db, 'organizations', organizacaoAtualId, 'modalidades', slug)
     const capacity = modalityData.capacity === '' || modalityData.capacity === 0 ? null : Number(modalityData.capacity)
     const { initialClass, ...pureData } = modalityData
 
@@ -145,7 +133,7 @@ export function useModalities() {
   }
 
   const updateModality = async (id, data) => {
-    const modRef = doc(db, 'organizations', organizacaoAtualId, 'modalities', id)
+    const modRef = doc(db, 'organizations', organizacaoAtualId, 'modalidades', id)
     const capacity = data.capacity === '' || data.capacity === 0 ? null : Number(data.capacity)
     
     await updateDoc(modRef, {
@@ -156,7 +144,7 @@ export function useModalities() {
   }
 
   const toggleModalityStatus = async (id, currentStatus) => {
-    const modRef = doc(db, 'organizations', organizacaoAtualId, 'modalities', id)
+    const modRef = doc(db, 'organizations', organizacaoAtualId, 'modalidades', id)
     await updateDoc(modRef, {
       status: currentStatus === 'ativo' ? 'inativo' : 'ativo',
       updatedAt: serverTimestamp()
@@ -164,7 +152,7 @@ export function useModalities() {
   }
 
   const deleteModality = async (id) => {
-    await deleteDoc(doc(db, 'organizations', organizacaoAtualId, 'modalities', id))
+    await deleteDoc(doc(db, 'organizations', organizacaoAtualId, 'modalidades', id))
   }
 
   const addClass = async (modalityId, data) => {
@@ -173,7 +161,7 @@ export function useModalities() {
       .replace(/\s+/g, '-')
       .replace(/[^\w-]/g, '')
 
-    const classRef = doc(db, 'organizations', organizacaoAtualId, 'modalities', modalityId, SUB_COLLECTIONS.TURMAS, slug)
+    const classRef = doc(db, 'organizations', organizacaoAtualId, 'modalidades', modalityId, 'turmas', slug)
     
     await setDoc(classRef, {
       ...data,
@@ -187,7 +175,7 @@ export function useModalities() {
   }
 
   const updateClass = async (modalityId, classId, data) => {
-    const classRef = doc(db, 'organizations', organizacaoAtualId, 'modalities', modalityId, SUB_COLLECTIONS.TURMAS, classId)
+    const classRef = doc(db, 'organizations', organizacaoAtualId, 'modalidades', modalityId, 'turmas', classId)
     await updateDoc(classRef, {
       ...data,
       updatedAt: serverTimestamp()
@@ -205,8 +193,9 @@ export function useModalities() {
     try {
       const promises = professors.map(async (p) => {
         if (!p.id) return
-        const userRef = doc(db, COLLECTIONS.USUARIOS, p.id)
-        
+        // Escrito na subcoleção tenant-scoped `usuarios` da organização ativa
+        const userRef = doc(db, 'organizations', organizacaoAtualId, 'usuarios', p.id)
+
         await updateDoc(userRef, {
           modalities: arrayUnion(modalityName),
           updatedAt: serverTimestamp()
@@ -220,7 +209,7 @@ export function useModalities() {
   }
 
   const deleteClass = async (modalityId, classId) => {
-    const classRef = doc(db, 'organizations', organizacaoAtualId, 'modalities', modalityId, SUB_COLLECTIONS.TURMAS, classId)
+    const classRef = doc(db, 'organizations', organizacaoAtualId, 'modalidades', modalityId, 'turmas', classId)
     await deleteDoc(classRef)
   }
 

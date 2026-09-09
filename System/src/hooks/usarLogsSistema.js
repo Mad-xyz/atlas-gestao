@@ -2,42 +2,40 @@
  * HOOK E SERVIÇO DE LOGS DE ATIVIDADE DO SISTEMA
  *
  * TUDO EM PORTUGUÊS:
- * - Coleção: logs_sistema
+ * - Subcoleção: organizations/{orgId}/logs
  * - Campos: tipo, nivel, acao, titulo, detalhe, etc.
+ *
+ * MULTI-TENANT: toda escrita/leitura é escopada na organização ativa.
+ * Funções standalone usam o store `obterOrganizacaoAtiva()` ou a opção
+ * `organizationId` explícita.
  *
  * Fornece:
  * 1. Função standalone `registrarAtividade()` — importável de qualquer lugar
  * 2. Hook `useSystemLogs()` — para página de logs com paginação e filtro por role
- *
- * Campos salvos no Firestore:
- * - tipo: 'activity' | 'error'
- * - nivel: 'info' | 'warn' | 'error'
- * - acao: verbo (criar, editar, excluir, pagar, alterar_status, finalizar)
- * - titulo: título curto (ex: "Adicionou aluno")
- * - detalhe: descrição completa
- * - usuarioId: ID de quem fez a ação
- * - usuarioNome: nome de quem fez
- * - usuarioPapel: papel (admin, gestor, professor, sistema)
- * - usuarioAvatar: URL da foto
- * - categoria: aluno, chamada, financeiro, evento, equipe, sistema
- * - alvoId: ID do alvo da ação
- * - alvoNome: nome do alvo
- * - valorAntigo: valor anterior (para edições)
- * - valorNovo: novo valor (para edições)
- * - criadoEm: timestamp do servidor
  */
-
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   collection, onSnapshot, query, orderBy, addDoc,
   serverTimestamp, limit, startAfter, getDocs, where
 } from 'firebase/firestore'
 import { db } from '../firebase/config'
-import { COLLECTIONS } from '../firebase/collections'
+import { COLLECTIONS, ROOT_COLLECTIONS } from '../firebase/collections'
 import { useAuth } from '../context/AuthContext'
+import { useOrganizacao } from '../context/OrganizacaoContext'
+import { obterOrganizacaoAtiva } from '../utils/organizacaoAtiva'
 
-const COLECAO = COLLECTIONS.LOGS_SISTEMA
+const COLECAO = COLLECTIONS.LOGS
 const LIMITE_PAGINA = 20
+
+/** Resolve a organização alvo dos logs (explícita > store singleton) */
+const resolverOrgLogs = (opcoes) => {
+  const orgId = opcoes?.organizationId || obterOrganizacaoAtiva()
+  if (!orgId) {
+    console.warn('[Logs] Nenhuma organização ativa — log ignorado.')
+    return null
+  }
+  return orgId
+}
 
 /**
  * MAPEIA VERBO INFINITIVO → PASSADO (para o título combinado)
@@ -65,6 +63,7 @@ const VERBO_PASSADO = {
  * @param {string} titulo - Título curto (ex: "Adicionou aluno") — usado como fallback
  * @param {string} detalhe - Descrição detalhada
  * @param {object} opcoes - Opções adicionais
+ * @param {string} opcoes.organizationId - ID da organização (opcional; usa a ativa)
  * @param {string} opcoes.usuarioId - ID do usuário
  * @param {string} opcoes.usuarioNome - Nome do usuário
  * @param {string} opcoes.usuarioPapel - Papel do usuário
@@ -76,6 +75,9 @@ const VERBO_PASSADO = {
  * @param {string} opcoes.valorNovo - Novo valor (para edições)
  */
 export async function registrarAtividade(acao, titulo, detalhe = '', opcoes = {}) {
+  const orgId = resolverOrgLogs(opcoes)
+  if (!orgId) return false
+
   try {
     const {
       usuarioId = 'sistema',
@@ -121,7 +123,9 @@ export async function registrarAtividade(acao, titulo, detalhe = '', opcoes = {}
       detalheFinal = `Alterou status do ${alvoNome} de '${valorAntigo}' para '${valorNovo}'`
     }
 
-    await addDoc(collection(db, COLECAO), {
+    // Escopo tenant: organizations/{orgId}/logs
+    const logsRef = collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, orgId, COLECAO)
+    await addDoc(logsRef, {
       tipo: 'activity',
       nivel: 'info',
       acao,
@@ -137,6 +141,7 @@ export async function registrarAtividade(acao, titulo, detalhe = '', opcoes = {}
       alvoNome,
       valorAntigo,
       valorNovo,
+      organizationId: orgId,
       criadoEm: serverTimestamp(),
     })
 
@@ -151,6 +156,9 @@ export async function registrarAtividade(acao, titulo, detalhe = '', opcoes = {}
  * REGISTRA LOG DE ERRO (Standalone)
  */
 export async function registrarErro(acao, erro, opcoes = {}) {
+  const orgId = resolverOrgLogs(opcoes)
+  if (!orgId) return false
+
   try {
     const {
       usuarioId = 'sistema',
@@ -159,7 +167,8 @@ export async function registrarErro(acao, erro, opcoes = {}) {
       usuarioAvatar = ''
     } = opcoes
 
-    await addDoc(collection(db, COLECAO), {
+    const logsRef = collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, orgId, COLECAO)
+    await addDoc(logsRef, {
       tipo: 'error',
       nivel: 'error',
       acao,
@@ -170,6 +179,7 @@ export async function registrarErro(acao, erro, opcoes = {}) {
       usuarioPapel,
       usuarioAvatar,
       categoria: 'sistema',
+      organizationId: orgId,
       criadoEm: serverTimestamp(),
     })
 
@@ -184,6 +194,9 @@ export async function registrarErro(acao, erro, opcoes = {}) {
  * REGISTRA LOG DE AVISO (Standalone)
  */
 export async function registrarAviso(acao, titulo, detalhe = '', opcoes = {}) {
+  const orgId = resolverOrgLogs(opcoes)
+  if (!orgId) return false
+
   try {
     const {
       usuarioId = 'sistema',
@@ -195,7 +208,8 @@ export async function registrarAviso(acao, titulo, detalhe = '', opcoes = {}) {
       alvoNome = null
     } = opcoes
 
-    await addDoc(collection(db, COLECAO), {
+    const logsRef = collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, orgId, COLECAO)
+    await addDoc(logsRef, {
       tipo: 'activity',
       nivel: 'warn',
       acao,
@@ -208,6 +222,7 @@ export async function registrarAviso(acao, titulo, detalhe = '', opcoes = {}) {
       categoria,
       alvoId,
       alvoNome,
+      organizationId: orgId,
       criadoEm: serverTimestamp(),
     })
 
@@ -259,6 +274,7 @@ export function extrairDadosAuth(userData, effectiveRole) {
  * HOOK PRINCIPAL: useSystemLogs (usarLogsSistema)
  *
  * Usado na página de Logs (LogsPagina) para buscar com paginação e filtro por role.
+ * MULTI-TENANT: escuta somente organizations/{orgId}/logs da organização ativa.
  *
  * Regras:
  * - Admin: vê TODOS os logs
@@ -277,17 +293,24 @@ export function useSystemLogs(tipoLog = 'all', maxLogs = 100) {
 
   // Papel do usuário logado para filtrar
   const { effectiveRole } = useAuth()
+  const { organizacaoAtualId } = useOrganizacao()
 
   // Se não for admin, gestor/professor não veem ações de admin
   const filtrarAdmin = effectiveRole && effectiveRole !== 'admin'
 
   useEffect(() => {
+    if (!organizacaoAtualId) {
+      setLogs([])
+      setLoading(false)
+      return
+    }
+
     setLogs([])
     setTemMais(true)
     ultimoDocRef.current = null
 
     let q
-    const ref = collection(db, COLECAO)
+    const ref = collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLECAO)
 
     if (filtrarAdmin) {
       // Gestor/Professor: só vê logs que NÃO são de admin
@@ -324,18 +347,18 @@ export function useSystemLogs(tipoLog = 'all', maxLogs = 100) {
     }, () => setLoading(false))
 
     return unsub
-  }, [tipoLog, filtrarAdmin])
+  }, [tipoLog, filtrarAdmin, organizacaoAtualId])
 
   /**
    * CARREGA MAIS LOGS (Scroll Infinito)
    */
   const carregarMais = useCallback(async () => {
-    if (carregandoMais || !temMais || !ultimoDocRef.current) return
+    if (carregandoMais || !temMais || !ultimoDocRef.current || !organizacaoAtualId) return
 
     setCarregandoMais(true)
 
     try {
-      const ref = collection(db, COLECAO)
+      const ref = collection(db, ROOT_COLLECTIONS.ORGANIZATIONS, organizacaoAtualId, COLECAO)
 
       let q
       if (filtrarAdmin) {
@@ -374,7 +397,7 @@ export function useSystemLogs(tipoLog = 'all', maxLogs = 100) {
     } finally {
       setCarregandoMais(false)
     }
-  }, [carregandoMais, temMais, tipoLog, filtrarAdmin])
+  }, [carregandoMais, temMais, tipoLog, filtrarAdmin, organizacaoAtualId])
 
   return {
     logs,
