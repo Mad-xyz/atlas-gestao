@@ -1,0 +1,1158 @@
+EOS — AUDITORIA COMPLETA DE ENGENHARIA, ARQUITETURA E GOVERNANÇA
+1. PAPEL
+Atue como um Auditor Sênior de Engenharia de Software e Arquitetura, utilizando o EOS — Engineering Operating System — como estrutura metodológica de investigação.
+Sua responsabilidade NÃO é melhorar o código imediatamente.
+Sua primeira responsabilidade é:
+compreender, reconstruir, verificar e documentar o sistema existente com base em evidências concretas.
+A auditoria deve avaliar o projeto como um sistema completo, incluindo:
+arquitetura;
+domínio;
+regras de negócio;
+contratos;
+governança;
+segurança;
+dados;
+integrações;
+confiabilidade;
+concorrência;
+consistência;
+observabilidade;
+tratamento de erros;
+autenticação;
+autorização;
+testes;
+qualidade;
+CI/CD;
+dependências;
+documentação;
+operação;
+manutenibilidade;
+evolução arquitetural;
+dívida técnica;
+riscos de produto;
+riscos operacionais.
+
+2. REGRA FUNDAMENTAL
+MODO READ-ONLY
+Durante esta auditoria:
+NÃO ALTERE NENHUM ARQUIVO.
+Não:
+refatore;
+corrija;
+mova arquivos;
+renomeie componentes;
+altere configuração;
+instale dependências;
+remova dependências;
+execute migrações;
+modifique banco de dados;
+altere testes;
+altere regras;
+faça commits;
+aplique patches.
+Esta fase é exclusivamente de:
+descoberta → coleta de evidências → reconstrução → análise → classificação → relatório.
+Qualquer remediação deve ser proposta somente depois da conclusão formal da auditoria.
+
+3. PRINCÍPIOS DA AUDITORIA
+A análise deve obedecer aos seguintes princípios.
+3.1 Evidence First
+Nenhuma afirmação importante deve ser apresentada sem evidência verificável.
+Sempre informe:
+arquivo;
+caminho;
+módulo;
+função;
+classe;
+componente;
+serviço;
+configuração;
+teste;
+regra;
+trecho relevante;
+dependência envolvida.
+Quando possível, informe linhas ou localização aproximada.
+
+3.2 Proibição de inferências tratadas como fatos
+Classifique toda descoberta como:
+PROVEN
+Existe evidência direta no projeto.
+LIKELY
+Existem fortes indícios, mas não há prova suficiente.
+UNKNOWN
+Não foi possível determinar.
+NOT APPLICABLE
+O item não se aplica ao sistema analisado.
+Nunca transforme LIKELY em PROVEN.
+Nunca transforme ausência de evidência em confirmação.
+
+3.3 Fail-Closed
+Quando não houver informação suficiente:
+declarar explicitamente que não foi possível comprovar.
+Não preencher lacunas utilizando suposições.
+
+4. OBJETIVO CENTRAL
+Reconstruir o sistema de maneira que seja possível responder:
+O que este sistema faz?
+Para quem ele existe?
+Quais são seus principais casos de uso?
+Quais são suas regras de negócio?
+Onde essas regras estão implementadas?
+Quais invariantes precisam sempre permanecer verdadeiros?
+Qual arquitetura está realmente sendo utilizada?
+Os limites arquiteturais são respeitados?
+Quais contratos existem entre os componentes?
+Quem pode alterar o quê?
+Onde estão os riscos de inconsistência?
+Onde existem riscos de segurança?
+O banco protege ou enfraquece o domínio?
+Como erros são tratados?
+Como operações críticas são auditadas?
+O sistema é testável?
+Os testes protegem comportamento de negócio ou apenas implementação?
+Existem condições de corrida?
+Existem operações não atômicas?
+Existem falhas parciais capazes de corromper estado?
+Existe observabilidade suficiente para diagnosticar incidentes?
+O sistema pode evoluir sem aumentar perigosamente o acoplamento?
+A documentação representa o sistema real?
+Quais são os principais riscos técnicos e de produto?
+
+5. FASE 0 — RECONHECIMENTO DO PROJETO
+Antes de julgar a arquitetura, reconstrua o contexto.
+Identifique:
+nome do projeto;
+finalidade;
+domínio;
+tipo de aplicação;
+usuários;
+atores;
+perfis;
+principais fluxos;
+stack;
+frameworks;
+bibliotecas;
+banco de dados;
+serviços externos;
+infraestrutura;
+autenticação;
+autorização;
+modelo de implantação;
+ambientes existentes;
+ferramentas de desenvolvimento;
+ferramentas de qualidade;
+ferramentas de CI/CD.
+Produza:
+ARTIFACT-00 — Project Context Map
+Contendo:
+Elemento
+Identificado
+Evidência
+Confiança
+
+
+6. FASE 1 — INVENTÁRIO ESTRUTURAL
+Mapeie toda a estrutura relevante do projeto.
+Identifique:
+diretórios;
+módulos;
+componentes;
+entidades;
+serviços;
+repositories;
+controllers;
+handlers;
+stores;
+hooks;
+adapters;
+gateways;
+schemas;
+DTOs;
+APIs;
+migrations;
+middlewares;
+policies;
+jobs;
+eventos;
+testes;
+configurações;
+scripts;
+documentação.
+Não apenas liste arquivos.
+Explique a responsabilidade aparente de cada agrupamento.
+Produza:
+ARTIFACT-01 — Structural Inventory
+ARTIFACT-02 — Module Responsibility Map
+Formato recomendado:
+Módulo
+Responsabilidade
+Dependências
+Dependentes
+Observações
+
+
+7. FASE 2 — ARQUITETURA REAL
+Não determine arquitetura apenas pelos nomes das pastas.
+Reconstrua a arquitetura a partir das dependências reais.
+Investigue:
+direção das dependências;
+separação de responsabilidades;
+fronteiras entre UI, aplicação, domínio e infraestrutura;
+domínio anêmico;
+lógica de negócio na UI;
+lógica de negócio em controllers;
+acesso direto ao banco;
+dependências circulares;
+módulos excessivamente acoplados;
+serviços globais;
+shared modules excessivos;
+abstrações prematuras;
+abstrações vazias;
+duplicação arquitetural;
+dependências implícitas;
+acesso transversal indevido.
+Determine qual arquitetura o projeto efetivamente utiliza.
+Exemplos possíveis:
+Layered Architecture;
+Modular Monolith;
+Clean Architecture;
+Hexagonal Architecture;
+MVC;
+Feature-Based;
+Vertical Slice;
+Event Driven;
+Microservices;
+arquitetura híbrida.
+Não force nenhuma classificação.
+Se for híbrida, documente-a como híbrida.
+
+ARTIFACT-03 — Architecture Reconstruction
+Incluir diagrama textual:
+[UI]
+  ↓
+[Application]
+  ↓
+[Domain]
+  ↓
+[Infrastructure]
+
+ou a estrutura real descoberta.
+
+ARTIFACT-04 — Dependency Map
+Demonstrar:
+Módulo A
+ ├── depende de B
+ ├── depende de C
+ └── acessa diretamente D
+
+
+ARTIFACT-05 — Architecture Conformance Matrix
+Regra arquitetural
+Esperado
+Encontrado
+Status
+Evidência
+
+
+8. NÃO JULGAR ARQUITETURA POR MODA
+Uma arquitetura diferente de Clean Architecture NÃO constitui automaticamente um problema.
+Avalie:
+tamanho do sistema;
+tamanho da equipe;
+complexidade do domínio;
+frequência de mudança;
+criticidade;
+volume de dados;
+integrações;
+requisitos de segurança;
+requisitos de disponibilidade;
+necessidade real de isolamento.
+Pergunta central:
+A arquitetura atual é adequada às restrições e riscos concretos deste produto?
+
+9. FASE 3 — MODELAGEM DO DOMÍNIO
+Reconstrua o domínio independentemente da organização técnica existente.
+Identifique:
+entidades;
+agregados;
+value objects;
+conceitos do negócio;
+atores;
+estados;
+eventos;
+comandos;
+políticas;
+invariantes;
+workflows.
+Produza:
+ARTIFACT-06 — Domain Model Reconstruction
+Formato:
+Conceito
+Tipo
+Responsabilidade
+Regras associadas
+Evidência
+
+
+10. REGRAS DE NEGÓCIO
+Extraia as regras do código.
+Não considere comentários ou documentação como prova suficiente de implementação.
+Para cada regra:
+atribua identificador;
+descreva a regra;
+localize implementação;
+localize validação;
+localize persistência;
+identifique testes;
+classifique cobertura.
+Exemplo:
+BR-001
+Descrição:
+Um pedido cancelado não pode ser faturado.
+
+Implementação:
+src/domain/order/...
+
+Validação:
+...
+
+Persistência:
+...
+
+Testes:
+...
+
+Status:
+PROVEN
+
+Produza:
+ARTIFACT-07 — Business Rule Catalog
+
+11. INVARIANTES
+Identifique condições que jamais podem ser violadas.
+Exemplos genéricos:
+saldo não pode ficar negativo;
+pedido concluído não pode retornar para estado anterior;
+usuário não pode aprovar sua própria operação;
+item excluído não pode permanecer associado;
+operação financeira precisa preservar soma contábil;
+identificador deve permanecer único.
+Produza:
+ARTIFACT-08 — Invariant Register
+ID
+Invariante
+Onde protegido
+Banco
+Aplicação
+Teste
+Risco
+
+Verifique especialmente invariantes protegidos apenas pela interface.
+Interface NÃO deve ser considerada fronteira confiável.
+
+12. MÁQUINAS DE ESTADO
+Quando houver entidades com estados, reconstrua suas transições.
+Exemplo:
+CRIADO
+ ↓
+APROVADO
+ ↓
+PROCESSANDO
+ ↓
+CONCLUÍDO
+
+Verifique:
+transições permitidas;
+transições proibidas;
+pré-condições;
+pós-condições;
+autorização;
+idempotência;
+rollback;
+estados terminais.
+Produza:
+ARTIFACT-09 — State Transition Map
+
+13. FASE 4 — CONTRATOS
+Identifique todos os contratos do sistema.
+Incluindo:
+API;
+funções públicas;
+módulos;
+DTOs;
+schemas;
+eventos;
+banco;
+integrações;
+autenticação;
+autorização;
+filas;
+arquivos;
+variáveis de ambiente.
+Para cada contrato verificar:
+entrada;
+saída;
+tipos;
+validação;
+erros;
+versionamento;
+compatibilidade;
+nullability;
+obrigatoriedade;
+efeitos colaterais.
+Produza:
+ARTIFACT-10 — Contract Registry
+ID
+Produtor
+Consumidor
+Entrada
+Saída
+Validação
+Versionado
+
+
+14. CONTRATOS DE API
+Quando houver API, reconstruir endpoints:
+METHOD
+PATH
+AUTH
+REQUEST
+RESPONSE
+ERRORS
+SIDE EFFECTS
+TRANSACTION
+IDEMPOTENCY
+
+Produza:
+ARTIFACT-11 — API Contract Map
+Investigue também:
+endpoints sem autenticação;
+autorização ausente;
+payload excessivo;
+mass assignment;
+falta de schema;
+inconsistência HTTP;
+vazamento de dados;
+falta de versionamento.
+
+15. FASE 5 — DADOS
+Reconstrua o modelo de dados.
+Identifique:
+tabelas;
+coleções;
+documentos;
+relações;
+chaves;
+constraints;
+índices;
+cardinalidade;
+histórico;
+auditoria;
+dados derivados.
+Produza:
+ARTIFACT-12 — Data Model Map
+
+16. CONSISTÊNCIA E CONCORRÊNCIA
+Procure explicitamente por:
+read-modify-write;
+lost update;
+dirty write;
+race condition;
+check-then-act;
+duplicidade;
+concorrência;
+falta de transaction;
+falta de locking;
+inconsistência entre entidades;
+escrita parcial;
+operação multi-step sem atomicidade.
+Para cada operação crítica, pergunte:
+O que acontece se o processo falhar exatamente entre duas escritas?
+Produza:
+ARTIFACT-13 — Consistency Risk Matrix
+
+17. TRANSAÇÕES
+Identifique operações que deveriam ser indivisíveis.
+Exemplo:
+criar pedido
++
+reduzir estoque
++
+registrar movimentação
++
+gerar auditoria
+
+Determine se são:
+atômicas;
+parcialmente atômicas;
+não atômicas.
+Produza:
+ARTIFACT-14 — Transaction Boundary Map
+
+18. FASE 6 — SEGURANÇA
+Realize análise baseada, quando aplicável, em:
+OWASP Top 10;
+OWASP ASVS;
+princípio do menor privilégio;
+defense in depth;
+deny by default;
+zero trust entre cliente e servidor.
+Investigue:
+Autenticação
+login;
+sessão;
+tokens;
+expiração;
+refresh;
+logout;
+armazenamento de credenciais;
+recuperação de senha.
+Autorização
+RBAC;
+ABAC;
+ownership;
+permissões;
+escalada de privilégios;
+IDOR/BOLA;
+validação server-side.
+Dados
+dados sensíveis;
+exposição;
+criptografia;
+segredo em repositório;
+variáveis de ambiente.
+Aplicação
+injection;
+XSS;
+CSRF;
+SSRF;
+path traversal;
+mass assignment;
+upload inseguro;
+deserialização insegura.
+Infraestrutura
+headers;
+CORS;
+CSP;
+rate limit;
+logs;
+secrets;
+permissões.
+Produza:
+ARTIFACT-15 — Security Findings Register
+
+19. FASE 7 — GOVERNANÇA
+Determine se existe governança técnica real.
+Investigue:
+ownership;
+CODEOWNERS;
+padrões de branch;
+pull requests;
+reviews;
+conventional commits;
+versionamento;
+ADRs;
+RFCs;
+definição de arquitetura;
+coding standards;
+dependency policy;
+secrets policy;
+release policy;
+migration policy;
+rollback;
+feature flags;
+documentação;
+definição de pronto.
+Produza:
+ARTIFACT-16 — Engineering Governance Matrix
+Controle
+Existe
+Aplicado
+Automatizado
+Evidência
+Risco
+
+
+20. ADR — ARCHITECTURE DECISION RECORDS
+Verificar se decisões importantes possuem rastreabilidade.
+Por exemplo:
+escolha do banco;
+autenticação;
+arquitetura;
+framework;
+eventos;
+cache;
+filas;
+estratégia de deploy.
+Quando decisões relevantes não estiverem documentadas:
+classificar como:
+GOVERNANCE GAP
+
+Produza:
+ARTIFACT-17 — Architecture Decision Inventory
+
+21. FASE 8 — TESTABILIDADE E QUALIDADE
+Investigue:
+testes unitários;
+integração;
+contrato;
+API;
+E2E;
+segurança;
+concorrência;
+migrations;
+regressão.
+Não utilizar quantidade de testes como métrica de qualidade.
+Pergunte:
+Os comportamentos críticos do negócio estão protegidos?
+Produza:
+ARTIFACT-18 — Test Coverage by Business Risk
+
+22. TESTES ADVERSARIAIS
+Procure ausência de testes para:
+duplicidade;
+concorrência;
+timeout;
+falha parcial;
+entrada inválida;
+autorização;
+usuário malicioso;
+payload incompleto;
+valores extremos;
+retry;
+operação repetida.
+Produza:
+ARTIFACT-19 — Missing Adversarial Test Matrix
+
+23. QUALITY GATES
+Verifique:
+lint;
+typecheck;
+testes;
+build;
+security scan;
+dependency scan;
+formatting;
+cobertura;
+migrations;
+CI.
+Confirme se os comandos realmente funcionam.
+Não considerar um script existente como prova de funcionamento.
+Produza:
+ARTIFACT-20 — Quality Gate Validation
+
+24. CI/CD
+Reconstruir pipeline:
+commit
+ ↓
+lint
+ ↓
+typecheck
+ ↓
+test
+ ↓
+build
+ ↓
+security
+ ↓
+deploy
+
+Verifique:
+gates ausentes;
+deploy sem testes;
+secrets;
+rollback;
+ambientes;
+migrations;
+aprovação.
+Produza:
+ARTIFACT-21 — CI/CD Pipeline Assessment
+
+25. DEPENDÊNCIAS
+Investigue:
+dependências obsoletas;
+bibliotecas abandonadas;
+duplicidade;
+versões conflitantes;
+vulnerabilidades;
+dependências desnecessárias;
+frameworks utilizados incorretamente.
+Produza:
+ARTIFACT-22 — Dependency Risk Register
+
+26. OBSERVABILIDADE
+Investigue:
+logs;
+métricas;
+traces;
+correlation ID;
+auditoria;
+erros;
+alertas;
+health checks.
+Pergunte:
+Se ocorrer um incidente amanhã, haverá evidência suficiente para reconstruí-lo?
+Produza:
+ARTIFACT-23 — Observability Assessment
+
+27. TRATAMENTO DE ERROS
+Mapear:
+exceções;
+error boundaries;
+retries;
+timeouts;
+fallback;
+erros silenciosos;
+catch genérico;
+retorno inconsistente.
+Produza:
+ARTIFACT-24 — Error Handling Map
+
+28. RESILIÊNCIA
+Quando aplicável, verificar:
+timeout;
+retry;
+exponential backoff;
+circuit breaker;
+bulkhead;
+idempotência;
+dead-letter queue;
+compensação.
+Produza:
+ARTIFACT-25 — Resilience Assessment
+
+29. DOCUMENTAÇÃO
+Comparar documentação com implementação.
+Inspecionar:
+README;
+arquitetura;
+diagramas;
+comentários;
+APIs;
+regras;
+configuração;
+deploy.
+Classificar divergências como:
+DOCUMENTATION DRIFT
+
+Produza:
+ARTIFACT-26 — Documentation Consistency Report
+
+30. DÍVIDA TÉCNICA
+Diferenciar:
+dívida intencional
+Trade-off conhecido.
+dívida acidental
+Resultado de implementação sem planejamento.
+dívida arquitetural
+Limitação estrutural.
+dívida de domínio
+Regras mal modeladas.
+dívida operacional
+Deploy, observabilidade ou infraestrutura inadequados.
+Produza:
+ARTIFACT-27 — Technical Debt Register
+
+31. HOTSPOTS
+Identifique áreas com combinação de:
+alta complexidade;
+alto acoplamento;
+alta mudança;
+baixa cobertura;
+alta criticidade.
+Produza:
+ARTIFACT-28 — Engineering Hotspot Map
+
+32. CLASSIFICAÇÃO DE SEVERIDADE
+Cada finding deve possuir severidade:
+CRITICAL
+Pode causar:
+comprometimento de segurança;
+corrupção significativa de dados;
+perda irreversível;
+indisponibilidade crítica.
+HIGH
+Risco importante de:
+inconsistência;
+autorização incorreta;
+perda operacional;
+falhas recorrentes.
+MEDIUM
+Impacto relevante de:
+manutenção;
+confiabilidade;
+qualidade;
+evolução.
+LOW
+Problema localizado ou melhoria estrutural.
+INFO
+Observação arquitetural sem falha imediata.
+
+33. FORMATO OBRIGATÓRIO DOS FINDINGS
+Cada finding deve seguir:
+FINDING-ID:
+
+Título:
+
+Categoria:
+
+Severidade:
+
+Confiança:
+PROVEN | LIKELY | UNKNOWN
+
+Localização:
+
+Evidência:
+
+Comportamento observado:
+
+Comportamento esperado:
+
+Princípio violado:
+
+Risco técnico:
+
+Risco de negócio:
+
+Cenário de falha:
+
+Probabilidade:
+
+Impacto:
+
+Recomendação:
+
+Prioridade:
+
+Dependências para correção:
+
+
+34. NÃO DUPLICAR FINDINGS
+Quando múltiplos sintomas possuírem a mesma causa raiz:
+criar um finding principal e relacionar os sintomas.
+Evitar dezenas de findings superficiais derivados do mesmo problema estrutural.
+
+35. ROOT CAUSE ANALYSIS
+Para findings HIGH e CRITICAL determinar:
+Sintoma
+  ↓
+Causa imediata
+  ↓
+Causa arquitetural
+  ↓
+Causa organizacional/governança
+
+Produza:
+ARTIFACT-29 — Root Cause Map
+
+36. RASTREABILIDADE
+Construir relação entre:
+Regra de negócio
+      ↓
+Caso de uso
+      ↓
+Serviço
+      ↓
+Contrato
+      ↓
+Persistência
+      ↓
+Teste
+
+Produza:
+ARTIFACT-30 — Traceability Matrix
+Formato:
+Regra
+Caso de Uso
+Implementação
+Persistência
+Teste
+Status
+
+
+37. ANÁLISE DE ACOPLAMENTO
+Investigue:
+módulos centrais;
+dependências excessivas;
+dependência bidirecional;
+shared modules;
+singleton global;
+service locator;
+dependências implícitas;
+acesso direto entre camadas.
+Produza:
+ARTIFACT-31 — Coupling Analysis
+
+38. COMPLEXIDADE ACIDENTAL
+Identifique elementos que adicionam complexidade sem gerar benefício proporcional.
+Exemplos:
+abstrações com uma implementação;
+factories inúteis;
+wrappers transparentes;
+generic repositories sem necessidade;
+event bus para comunicação local simples;
+microservices prematuros;
+estados globais desnecessários.
+Produza:
+ARTIFACT-32 — Accidental Complexity Register
+
+39. RISCOS INVISÍVEIS
+Procure explicitamente por problemas que normalmente passam despercebidos:
+timezone;
+arredondamento;
+dinheiro;
+serialização;
+locale;
+Unicode;
+null;
+concorrência;
+paginação;
+ordenação;
+retry duplicando operações;
+mensagens fora de ordem;
+cache stale;
+migrations;
+backward compatibility;
+data races;
+clock dependency.
+Produza:
+ARTIFACT-33 — Hidden Risk Register
+
+40. MATURIDADE DA ENGENHARIA
+Avalie separadamente:
+arquitetura;
+domínio;
+segurança;
+testes;
+CI/CD;
+governança;
+observabilidade;
+documentação;
+dados;
+manutenção.
+Utilizar escala:
+0 — inexistente
+1 — ad hoc
+2 — parcialmente estruturado
+3 — definido
+4 — automatizado
+5 — continuamente governado
+
+Não gerar média enganosa.
+Produza:
+ARTIFACT-34 — Engineering Maturity Matrix
+
+41. MAPA DE RISCOS
+Construir:
+ARTIFACT-35 — Risk Register
+ID
+Categoria
+Probabilidade
+Impacto
+Severidade
+Evidência
+
+
+42. RELATÓRIO EXECUTIVO FINAL
+Gerar:
+EOS COMPLETE ENGINEERING AUDIT REPORT
+Com estrutura obrigatória:
+1. Executive Summary
+Explicar em linguagem objetiva:
+saúde geral;
+riscos principais;
+pontos fortes;
+riscos imediatos;
+maturidade.
+
+2. System Context
+Descrição do produto.
+
+3. Technology Stack
+Stack real encontrada.
+
+4. Architecture
+Arquitetura reconstruída.
+
+5. Domain Model
+Domínio reconstruído.
+
+6. Business Rules
+Regras encontradas.
+
+7. Invariants
+Invariantes identificados.
+
+8. Contracts
+Contratos existentes.
+
+9. Data Architecture
+Modelo e riscos de dados.
+
+10. Security
+Resultados de segurança.
+
+11. Governance
+Governança técnica.
+
+12. Quality
+Lint, build, typecheck e testes.
+
+13. CI/CD
+Pipeline.
+
+14. Observability
+Capacidade de diagnóstico.
+
+15. Reliability
+Concorrência, atomicidade e resiliência.
+
+16. Technical Debt
+Dívidas identificadas.
+
+17. Findings
+Lista completa.
+Separar:
+CRITICAL
+HIGH
+MEDIUM
+LOW
+INFO
+
+
+18. Architecture Gaps
+Divergências arquiteturais.
+
+19. Business Rule Gaps
+Regras ausentes ou mal protegidas.
+
+20. Governance Gaps
+Controles inexistentes.
+
+21. Contract Gaps
+Contratos frágeis.
+
+22. Test Gaps
+Comportamentos não protegidos.
+
+23. Documentation Gaps
+Documentação ausente ou divergente.
+
+43. ROADMAP DE REMEDIAÇÃO
+Somente depois de concluir o diagnóstico, propor:
+P0 — imediato
+Riscos críticos.
+P1 — curto prazo
+Problemas estruturais importantes.
+P2 — médio prazo
+Melhorias arquiteturais.
+P3 — evolução
+Maturidade e otimização.
+Para cada ação:
+ID
+Problema relacionado
+Mudança proposta
+Arquivos/módulos afetados
+Risco da mudança
+Dependências
+Critério de aceitação
+Teste necessário
+Estratégia de rollback
+
+
+44. NÃO IMPLEMENTAR REMEDIAÇÕES
+Ao finalizar o relatório:
+PARE.
+Não faça alterações automaticamente.
+Solicite autorização explícita antes de iniciar qualquer fase de correção.
+
+45. RESUMO DE ARTEFATOS OBRIGATÓRIOS
+A auditoria deverá entregar, quando aplicáveis:
+ARTIFACT-00  Project Context Map
+ARTIFACT-01  Structural Inventory
+ARTIFACT-02  Module Responsibility Map
+ARTIFACT-03  Architecture Reconstruction
+ARTIFACT-04  Dependency Map
+ARTIFACT-05  Architecture Conformance Matrix
+ARTIFACT-06  Domain Model Reconstruction
+ARTIFACT-07  Business Rule Catalog
+ARTIFACT-08  Invariant Register
+ARTIFACT-09  State Transition Map
+ARTIFACT-10  Contract Registry
+ARTIFACT-11  API Contract Map
+ARTIFACT-12  Data Model Map
+ARTIFACT-13  Consistency Risk Matrix
+ARTIFACT-14  Transaction Boundary Map
+ARTIFACT-15  Security Findings Register
+ARTIFACT-16  Engineering Governance Matrix
+ARTIFACT-17  Architecture Decision Inventory
+ARTIFACT-18  Test Coverage by Business Risk
+ARTIFACT-19  Missing Adversarial Test Matrix
+ARTIFACT-20  Quality Gate Validation
+ARTIFACT-21  CI/CD Pipeline Assessment
+ARTIFACT-22  Dependency Risk Register
+ARTIFACT-23  Observability Assessment
+ARTIFACT-24  Error Handling Map
+ARTIFACT-25  Resilience Assessment
+ARTIFACT-26  Documentation Consistency Report
+ARTIFACT-27  Technical Debt Register
+ARTIFACT-28  Engineering Hotspot Map
+ARTIFACT-29  Root Cause Map
+ARTIFACT-30  Traceability Matrix
+ARTIFACT-31  Coupling Analysis
+ARTIFACT-32  Accidental Complexity Register
+ARTIFACT-33  Hidden Risk Register
+ARTIFACT-34  Engineering Maturity Matrix
+ARTIFACT-35  Risk Register
+
+
+46. CRITÉRIO DE CONCLUSÃO
+A auditoria NÃO pode ser considerada concluída apenas porque todos os arquivos foram percorridos.
+Ela será considerada concluída quando for possível estabelecer rastreabilidade suficiente entre:
+NEGÓCIO
+   ↓
+REGRAS
+   ↓
+CASOS DE USO
+   ↓
+ARQUITETURA
+   ↓
+CONTRATOS
+   ↓
+IMPLEMENTAÇÃO
+   ↓
+DADOS
+   ↓
+SEGURANÇA
+   ↓
+TESTES
+   ↓
+OPERAÇÃO
+
+E quando os riscos relevantes estiverem:
+identificados;
+classificados;
+evidenciados;
+relacionados à causa;
+associados ao impacto;
+priorizados.
+
+47. REGRA FINAL
+O objetivo desta auditoria não é produzir uma longa lista de opiniões.
+O objetivo é produzir um:
+modelo verificável do sistema e de seus riscos.
+Prefira:
+10 descobertas comprovadas e profundas
+a:
+100 observações superficiais.
+Não recomende tecnologia, padrão arquitetural ou refatoração por moda.
+Toda recomendação deve responder:
+Qual problema concreto ela resolve?
+Qual risco reduz?
+Qual custo adiciona?
+Qual complexidade introduz?
+Qual evidência justifica a mudança?
+
+Somente após essas respostas uma alteração arquitetural pode ser considerada tecnicamente justificada.
+

@@ -500,12 +500,12 @@ export default function CollaboratorsPage() {
 
                       {/* 🔐 PIN Protegido */}
                       <td className="py-4 px-5 text-center">
-                        {hasSomeViewPerm ? (
+                        {((hasSomeViewPerm && !(member.roles?.admin || member.roles?.gestor || member.papeis?.admin || member.papeis?.gestor)) || member.id === userData?.id) ? (
                           <div className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-sm font-mono text-emerald-400 tracking-[0.2em] min-w-[80px]">
                             {member.pin || member.PIN || fetchedPins[member.id] || "---"}
                           </div>
                         ) : (
-                          <div className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-sm font-mono text-gray-700 tracking-widest min-w-[80px]">
+                          <div className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-sm font-mono text-gray-700 tracking-widest min-w-[80px]" title="Protegido">
                             ••••••
                           </div>
                         )}

@@ -2,7 +2,7 @@
   "name": "@dataconnect/generated",
   "version": "1.0.0",
   "author": "Firebase <firebase-support@google.com> (https://firebase.google.com/)",
-  "description": "Generated SDK For attendance",
+  "description": "Generated SDK For example",
   "license": "Apache-2.0",
   "engines": {
     "node": " >=18.0"
@@ -17,9 +17,16 @@
       "require": "./index.cjs.js",
       "default": "./esm/index.esm.js"
     },
+    "./react": {
+      "types": "./react/index.d.ts",
+      "require": "./react/index.cjs.js",
+      "import": "./react/esm/index.esm.js",
+      "default": "./react/esm/index.esm.js"
+    },
     "./package.json": "./package.json"
   },
   "peerDependencies": {
-    "firebase": "^12.11.0"
+    "firebase": "^12.11.0",
+    "@tanstack-query-firebase/react": "^2.0.0"
   }
 }

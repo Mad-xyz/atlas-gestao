@@ -16,11 +16,10 @@ export default function LoginPage() {
   // (precisa vir ANTES do useState, senão dá erro de tempo de inicialização)
   const [searchParams] = useSearchParams()
   const urlEmail = searchParams.get('email') || ''
-  const urlPin   = searchParams.get('pin') || ''
-  const tentouAutoLogin = useRef(false)
 
   const [email, setEmail]       = useState(urlEmail)
-  const [pin, setPin]           = useState(urlPin)
+  const [pin, setPin]           = useState('')
+  const pinInputRef             = useRef(null)
   const [showPin, setShowPin]   = useState(false)
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState(null)
@@ -160,15 +159,12 @@ export default function LoginPage() {
     }
   }
 
-  // ── Login automático quando chegamos com e-mail + PIN (via cadastro) ──────
+  // ── Auto-focus no PIN quando chegamos com e-mail (via cadastro) ──────
   useEffect(() => {
-    if (tentouAutoLogin.current) return
-    if (!urlEmail || !urlPin) return
-    tentouAutoLogin.current = true
-    // Executa o mesmo fluxo do submit, com os dados vindos da URL.
-    handleSubmit({ preventDefault: () => {} })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    if (urlEmail && pinInputRef.current) {
+      pinInputRef.current.focus()
+    }
+  }, [urlEmail])
 
   const isLocked = lockoutTime > 0 && remainingSeconds > 0
 
@@ -277,6 +273,7 @@ export default function LoginPage() {
                     <Lock size={16} className="text-gray-600 group-focus-within:text-primary transition-colors" />
                   </div>
                   <input
+                    ref={pinInputRef}
                     type={showPin ? 'text' : 'password'}
                     inputMode="numeric"
                     autoComplete="current-password"

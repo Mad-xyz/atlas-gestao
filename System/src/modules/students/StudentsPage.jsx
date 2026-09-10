@@ -47,6 +47,7 @@ import { useAttendanceAlerts } from "../../hooks/useAttendanceAlerts";
 import { useApp } from "../../context/AppContext";
 import { useModalities } from "../../hooks/useModalities";
 import { adjustBillForModalityChange } from "../../utils/billingAdjustment";
+import { formatBR } from "../../utils/dateUtils";
 import AddStudentModal from "../../components/shared/AddStudentModal";
 import GraduationHistoryModal from "../../components/students/GraduationHistoryModal";
 import PaymentDrawer from "../../components/students/PaymentDrawer";

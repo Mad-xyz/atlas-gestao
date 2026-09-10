@@ -55,9 +55,9 @@ tmp/
 # ===== Android (evita assinar APKs falsos) =====
 *.jks
 *.keystore
-.eos/
-.ohmyagent/
-.pawnpro/
-.monkeycode/
-.gemini/
+.eos
+.ohmyagent
+.pawnpro
+.monkeycode
+.gemini
 .multi-tenant

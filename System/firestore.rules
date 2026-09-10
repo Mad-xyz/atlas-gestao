@@ -41,16 +41,9 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Admin global da plataforma (whitelist de e-mails / claim admin)
+    // Admin global da plataforma (claim admin)
     function isAdmin() {
-      return isAuthenticated() && (
-        request.auth.token.admin == true ||
-        request.auth.token.email.lower() in [
-          'pmadsonm@gmail.com',
-          'pmadsonm_gmail_com@atlas.internal',
-          'pmadsonm_gmail_com@rstopteam.internal'
-        ]
-      );
+      return isAuthenticated() && request.auth.token.admin == true;
     }
 
     // Organização existe e está ativa
@@ -109,6 +102,16 @@ service cloud.firestore {
     // O documento representa o próprio usuário autenticado
     function ehProprioUsuario(userId) {
       return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isTargetAdminOrGestor(orgId, targetId) {
+      return exists(/databases/$(database)/documents/organizations/$(orgId)/members/$(targetId))
+        && get(/databases/$(database)/documents/organizations/$(orgId)/members/$(targetId)).data.role in ['owner', 'admin', 'gestor'];
+    }
+
+    function isTargetProfessor(orgId, targetId) {
+      return exists(/databases/$(database)/documents/organizations/$(orgId)/members/$(targetId))
+        && get(/databases/$(database)/documents/organizations/$(orgId)/members/$(targetId)).data.role == 'professor';
     }
 
     // O documento financeiro/de presença pertence ao usuário autenticado
@@ -170,12 +173,13 @@ service cloud.firestore {
           allow read: if isOrganizationMember(orgId) && (isOrganizationStaff(orgId) || ehProprioUsuario(userId));
           allow write: if isOrganizationStaff(orgId);
         }
-        // PINs e segredos — acesso restrito (staff ou dono)
+        // PINs e segredos — acesso restrito baseado em papéis
         match /privado/segredos {
-          allow read: if isOrganizationStaff(orgId) || ehProprioUsuario(userId);
-          allow write: if isOrganizationStaff(orgId)
-            || (ehProprioUsuario(userId)
-                && request.resource.data.get('pin', '').matches('[0-9]{6}'));
+          allow read: if ehProprioUsuario(userId)
+            || (isOrganizationAdmin(orgId) && !isTargetAdminOrGestor(orgId, userId))
+            || (obterRoleNaOrganizacao(orgId) == 'professor' && !isTargetAdminOrGestor(orgId, userId) && !isTargetProfessor(orgId, userId));
+          allow write: if ehProprioUsuario(userId)
+            || (isOrganizationStaff(orgId) && !isTargetAdminOrGestor(orgId, userId));
         }
       }
 

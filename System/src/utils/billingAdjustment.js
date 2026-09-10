@@ -1,6 +1,6 @@
 import { db } from '../firebase/config'
 import { 
-  collection, query, where, getDocs, orderBy, limit, updateDoc, serverTimestamp 
+  collection, query, where, getDocs, orderBy, limit, updateDoc, serverTimestamp, doc
 } from 'firebase/firestore'
 import { COLLECTIONS, ROOT_COLLECTIONS } from '../firebase/collections'
 import { obterOrganizacaoAtiva } from './organizacaoAtiva'

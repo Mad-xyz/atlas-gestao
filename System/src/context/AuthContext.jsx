@@ -94,31 +94,40 @@ export function AuthProvider({ children }) {
   }
 
   const effectiveRole = (() => {
-    if (simulatedRole) return simulatedRole;
+    let realRole = 'aluno'
     
     // Prioridade 0: Super Admin da plataforma (Custom Claim)
-    if (userData?.isSuperAdmin === true) return 'superAdmin'
+    if (userData?.isSuperAdmin === true) {
+      realRole = 'superAdmin'
+    } else {
+      // Prioridade 1: Objeto 'papeis' (SSoT Moderno)
+      const papeis = userData?.papeis || {}
+      if (papeis.admin === true) realRole = 'admin'
+      else if (papeis.gestor === true) realRole = 'gestor'
+      else if (papeis.professor === true) realRole = 'professor'
+      else {
+        // Prioridade 2: Objeto 'roles' (Legado)
+        const roles = userData?.roles || {}
+        if (roles.admin === true) realRole = 'admin'
+        else if (roles.gestor === true) realRole = 'gestor'
+        else if (roles.professor === true) realRole = 'professor'
+        else {
+          // Prioridade 3: Campo 'role' (String)
+          const roleStr = String(userData?.role || '').toLowerCase()
+          if (roleStr === 'superadmin') realRole = 'superAdmin'
+          else if (roleStr === 'admin') realRole = 'admin'
+          else if (roleStr === 'gestor') realRole = 'gestor'
+          else if (roleStr === 'professor') realRole = 'professor'
+        }
+      }
+    }
 
-    // Prioridade 1: Objeto 'papeis' (SSoT Moderno)
-    const papeis = userData?.papeis || {}
-    if (papeis.admin === true) return 'admin'
-    if (papeis.gestor === true) return 'gestor'
-    if (papeis.professor === true) return 'professor'
-
-    // Prioridade 2: Objeto 'roles' (Legado)
-    const roles = userData?.roles || {}
-    if (roles.admin === true) return 'admin'
-    if (roles.gestor === true) return 'gestor'
-    if (roles.professor === true) return 'professor'
-
-    // Prioridade 3: Campo 'role' (String)
-    const roleStr = String(userData?.role || '').toLowerCase()
-    if (roleStr === 'superadmin') return 'superAdmin'
-    if (roleStr === 'admin') return 'admin'
-    if (roleStr === 'gestor') return 'gestor'
-    if (roleStr === 'professor') return 'professor'
+    // Apenas Admins e Gestores podem usar a funcionalidade de simular papel (ex: ver como aluno)
+    if (simulatedRole && (realRole === 'superAdmin' || realRole === 'admin' || realRole === 'gestor')) {
+      return simulatedRole;
+    }
     
-    return 'aluno'
+    return realRole;
   })()
 
   const isSuperAdmin = effectiveRole === 'superAdmin'

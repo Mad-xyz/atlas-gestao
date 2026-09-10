@@ -415,10 +415,10 @@
     } catch (e) {}
   }
 
-  function irParaLogin(email, pin) {
+  function irParaLogin(email) {
     if (!ENDERECO_LOGIN) return false;
     var separador = ENDERECO_LOGIN.indexOf("?") !== -1 ? "&" : "?";
-    var url = ENDERECO_LOGIN + separador + "email=" + encodeURIComponent(email) + "&pin=" + encodeURIComponent(pin);
+    var url = ENDERECO_LOGIN + separador + "email=" + encodeURIComponent(email);
     window.location.href = url;
     return true;
   }
@@ -510,7 +510,7 @@
       // Sucesso: guarda as credenciais.
       removerRespostasSalvas();
 
-      var redirecionou = irParaLogin(resultado.email, resultado.pin);
+      var redirecionou = irParaLogin(resultado.email);
 
       // Se não há URL de login configurada, confirma mostrando e-mail e PIN.
       if (!redirecionou) {
