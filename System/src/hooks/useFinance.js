@@ -46,6 +46,11 @@ export function useFinance() {
   const dadosLog = extrairDadosAuth(userData, effectiveRole)
 
   useEffect(() => {
+    // PURGA DE SEGURANÇA MULTI-TENANT
+    // Garante que o estado financeiro seja limpo síncronamente na transição de organizações
+    setCobrancas([])
+    setDespesas([])
+
     if (!user || !organizacaoAtualId) {
       setCarregandoCobrancas(false)
       setCarregandoDespesas(false)
@@ -55,17 +60,26 @@ export function useFinance() {
     setCarregandoCobrancas(true)
     setCarregandoDespesas(true)
 
+    // GUARDA DE ISOLAMENTO MULTI-TENANT
+    // Captura o orgId desta execução específica do efeito.
+    // Callbacks de snapshots atrasados de tenants anteriores são descartados
+    // antes de atualizar o estado, eliminando a condição de corrida A→B→snapshot-de-A.
+    const orgEscopada = organizacaoAtualId
+
     // 1. Escuta cobranças da academia ativa (subcoleção tenant-scoped `faturas`)
-    const refCobrancasOrg = collection(db, 'organizations', organizacaoAtualId, 'faturas')
+    const refCobrancasOrg = collection(db, 'organizations', orgEscopada, 'faturas')
     const qCobrancas = effectiveRole === 'aluno'
       ? query(refCobrancasOrg, where('studentId', '==', user.uid))
       : refCobrancasOrg
 
     const unsubCob = onSnapshot(qCobrancas, (snap) => {
+      // Descarta snapshot caso a organização já tenha mudado desde a criação deste listener
+      if (organizacaoAtualId !== orgEscopada) return
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       setCobrancas(data)
       setCarregandoCobrancas(false)
     }, (err) => {
+      if (organizacaoAtualId !== orgEscopada) return
       console.warn('⚠️ Erro ao buscar cobranças da organização:', err)
       setCobrancas([])
       setCarregandoCobrancas(false)
@@ -74,11 +88,14 @@ export function useFinance() {
     // 2. Escuta despesas da academia ativa (subcoleção tenant-scoped `despesas`)
     let unsubDesp = () => {}
     if (effectiveRole !== 'aluno' && effectiveRole !== 'professor') {
-      const refDespesasOrg = collection(db, 'organizations', organizacaoAtualId, 'despesas')
+      const refDespesasOrg = collection(db, 'organizations', orgEscopada, 'despesas')
       unsubDesp = onSnapshot(refDespesasOrg, (snap) => {
+        // Descarta snapshot caso a organização já tenha mudado desde a criação deste listener
+        if (organizacaoAtualId !== orgEscopada) return
         setDespesas(snap.docs.map(d => ({ id: d.id, ...d.data() })))
         setCarregandoDespesas(false)
       }, () => {
+        if (organizacaoAtualId !== orgEscopada) return
         setDespesas([])
         setCarregandoDespesas(false)
       })
@@ -94,7 +111,10 @@ export function useFinance() {
   }, [user, organizacaoAtualId, effectiveRole])
 
   // KPIs de Cobranças
-  const todayStr = new Date().toISOString().split('T')[0]
+  // TZ-FIX: usa data civil LOCAL (getFullYear/Month/Date) para evitar que UTC-3
+  // classifique cobranças do dia como vencidas nas 3h antes da meia-noite local.
+  const _hoje = new Date()
+  const todayStr = `${_hoje.getFullYear()}-${String(_hoje.getMonth() + 1).padStart(2, '0')}-${String(_hoje.getDate()).padStart(2, '0')}`
   const cobrancasVencidas = cobrancas.filter(b => 
     b.status === 'overdue' || (b.status === 'pending' && b.dueDate < todayStr)
   )

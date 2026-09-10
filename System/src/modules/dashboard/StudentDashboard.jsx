@@ -430,7 +430,10 @@ export default function StudentDashboard({ user, cobrancas = [] }) {
       amount = Number(currentBill.amount) || 0;
       status = currentBill.status === 'overdue' ? 'vencido' : 'pendente';
       
-      const today = new Date().toISOString().split('T')[0];
+      // TZ-FIX: usa data civil LOCAL para evitar reclassificação prematura
+      // nas 3h antes da meia-noite em UTC-3 (TZ-002)
+      const _h = new Date()
+      const today = `${_h.getFullYear()}-${String(_h.getMonth() + 1).padStart(2, '0')}-${String(_h.getDate()).padStart(2, '0')}`;
       if (currentBill.status === 'pending' && currentBill.dueDate < today) {
         status = 'vencido';
       }
